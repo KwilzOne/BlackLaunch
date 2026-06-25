@@ -369,11 +369,17 @@ public class MainWindow : Window
         ResetProgressUI();
         Dispatcher.UIThread.Post(() => _statusText.Text = i18n.Get("StatusBuildingFiles"));
 
+        var jvmArguments = "-XX:+UseG1GC -Dsun.rmi.dgc.server.gcInterval=2147483646 -XX:+UnlockExperimentalVMOptions -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M -Dfile.encoding=UTF-8";
+        if (versionToLaunch == "1.16.4" || versionToLaunch == "1.16.5") {
+            jvmArguments += " -Dminecraft.api.env=custom -Dminecraft.api.auth.host=https://invalid.invalid -Dminecraft.api.account.host=https://invalid.invalid -Dminecraft.api.session.host=https://invalid.invalid -Dminecraft.api.services.host=https://invalid.invalid";
+        }
+        var arguments = new MArgument[] { MArgument.FromCommandLine(jvmArguments) };
         var launchOptions = new MLaunchOption {
             Session = MSession.CreateOfflineSession(nickname),
             MaximumRamMb = 4096,
             MinimumRamMb = 1024,
-            FullScreen = false
+            FullScreen = false,
+            ExtraJvmArguments = arguments
         };
         var process = await launcher.BuildProcessAsync(versionToLaunch, launchOptions);
         _runningGame = process;

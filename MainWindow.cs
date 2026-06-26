@@ -19,10 +19,9 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using BlackLaunch.Models;
+using BlackLaunch.Services;
 
 namespace BlackLaunch;
 
@@ -40,7 +39,7 @@ public class MainWindow : Window
 
     private readonly string _baseLauncherPath;
     private readonly string _sharedPath;
-    private readonly string _configFile;
+    private readonly ConfigService _configService;
 
     private Process? _runningGame;
     private Config _config = new();
@@ -60,10 +59,10 @@ public class MainWindow : Window
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         _baseLauncherPath = Path.Combine(appData, ".black_launch");
         _sharedPath = Path.Combine(_baseLauncherPath, "shared");
-        _configFile = Path.Combine(_baseLauncherPath, "config.json");
 
         Directory.CreateDirectory(_baseLauncherPath);
-        LoadConfig();
+        _configService = new ConfigService(Path.Combine(_baseLauncherPath, "config.json"));
+        _config = _configService.Load();
 
         var titleBar = new Grid {
             Height = 30,
@@ -192,24 +191,6 @@ public class MainWindow : Window
         LoadVersionsAsync();
     }
 
-    private void LoadConfig()
-    {
-        try {
-            if (File.Exists(_configFile)) {
-                var json = File.ReadAllText(_configFile);
-                _config = JsonSerializer.Deserialize(json, ConfigContext.Default.Config) ?? new Config();
-            }
-        } catch { _config = new Config(); }
-    }
-
-    private void SaveConfig()
-    {
-        try {
-            var json = JsonSerializer.Serialize(_config, ConfigContext.Default.Config);
-            File.WriteAllText(_configFile, json);
-        } catch { }
-    }
-
     private async void LoadVersionsAsync()
     {
         try {
@@ -225,7 +206,7 @@ public class MainWindow : Window
                 else if (releases.Count > 0)
                     _versionBox.SelectedIndex = 0;
                 _versionBox.IsEnabled = true;
-                SaveConfig();
+                _configService.Save(_config);
             });
         } catch (Exception ex) {
             Dispatcher.UIThread.Post(() => {
@@ -271,7 +252,7 @@ public class MainWindow : Window
         _config.Nickname = _nicknameBox.Text;
         _config.Version = _versionBox.SelectedItem.ToString()!;
         _config.Loader = _loaderBox.SelectedItem?.ToString() ?? "Vanilla";
-        SaveConfig();
+        _configService.Save(_config);
 
         _playButton.IsEnabled = false;
         _progressBar.Value = 0;

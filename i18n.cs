@@ -13,7 +13,7 @@ internal static class i18n
         {
             "en", new Dictionary<string, string> {
                 { "LaunchSettings", "Launch Settings" },
-                { "NicknamePlaceholder", "Your nickname" },
+                { "NicknamePlaceholder", "Nickname" },
                 { "LoadingVersions", "Loading versions list..." },
                 { "Play", "Play" },
                 { "Stop", "Exit" },
@@ -35,7 +35,7 @@ internal static class i18n
         }, {
             "ru", new Dictionary<string, string> {
                 { "LaunchSettings", "Настройки запуска" },
-                { "NicknamePlaceholder", "Ваш никнейм" },
+                { "NicknamePlaceholder", "Игровой ник" },
                 { "LoadingVersions", "Загрузка списка версий" },
                 { "Play", "Играть" },
                 { "Stop", "Выйти" },

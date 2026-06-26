@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Avalonia.Threading;
 using CmlLib.Core;
 using CmlLib.Core.Auth;
 using CmlLib.Core.Installer.Forge;
@@ -18,11 +17,11 @@ namespace BlackLaunch.Services;
 
 public record DownloadProgress(int Percentage, string Speed, string Eta);
 
-public class GameLauncher
+public class GameLauncher(string sharedPath)
 {
     private static readonly HttpClient _httpClient = new();
 
-    private readonly string _sharedPath;
+    private readonly string _sharedPath = sharedPath;
     private Process? _runningGame;
     
     public bool IsRunning => _runningGame != null && !_runningGame.HasExited;
@@ -32,17 +31,8 @@ public class GameLauncher
     public event Action? ProgressFinished;
     public event Action? GameStarted;
     public event Action? GameExited;
-    
-    public GameLauncher(string sharedPath)
-    {
-        _sharedPath = sharedPath;
-    }
-    
-    public void Stop()
-    {
-        if (IsRunning)
-            try { _runningGame?.Kill(); } catch {}
-    }
+
+    public void Stop() { if (IsRunning) try { _runningGame?.Kill(); } catch {} }
 
     public async Task LaunchAsync(string nickname, string mcVersion, string loader, string instancePath)
     {
@@ -65,8 +55,7 @@ public class GameLauncher
                 downloadStarted = true;
                 StatusChanged?.Invoke(i18n.Get("StatusDownloadingFiles"));
             }
-            if (updateTimer.ElapsedMilliseconds > 300)
-                StatusChanged?.Invoke(i18n.Get("StatusDownloading", args.Name ?? ""));
+            if (updateTimer.ElapsedMilliseconds > 300) StatusChanged?.Invoke(i18n.Get("StatusDownloading", args.Name ?? ""));
         };
         
         launcher.ByteProgressChanged += (sender, args) => {
@@ -139,9 +128,7 @@ public class GameLauncher
             _runningGame = null;
             GameExited?.Invoke();
         };
-        
         GameStarted?.Invoke();
-
         var processWrapper = new ProcessWrapper(process);
         processWrapper.OutputReceived += (s, log) => Console.WriteLine($"[MINECRAFT] {log}");
         processWrapper.StartWithEvents();

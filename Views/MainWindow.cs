@@ -37,8 +37,8 @@ public class MainWindow : Window
     private TextBlock _progressDetailText = null!;
 
     private readonly ContentControl _tabContent = new() { Margin = new Thickness(0) };
-    private Control _playView = null!;
-    private Control _serversView = null!;
+    private readonly Control _playView = null!;
+    private readonly Control _serversView = null!;
     private Border _playUnderline = null!;
     private Border _serversUnderline = null!;
     private Border _playHoverBg = null!;
@@ -54,7 +54,7 @@ public class MainWindow : Window
     private readonly string _sharedPath;
     private readonly ConfigService _configService;
     private readonly GameLauncher _gameLauncher;
-    private Config _config = new();
+    private readonly Config _config = new();
     
     private sealed record LoaderOption(string Name, string IconData);
     private static void StyleField(TemplatedControl c)
@@ -79,7 +79,7 @@ public class MainWindow : Window
         ExtendClientAreaToDecorationsHint = true;
         RequestedThemeVariant = ThemeVariant.Dark;
         Background = Brushes.Transparent;
-        TransparencyLevelHint = new[] { WindowTransparencyLevel.Transparent };
+        TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
         
         Bitmap? logo = null;
         using (var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("BlackLaunch.logo.png"))
@@ -99,7 +99,7 @@ public class MainWindow : Window
         
         var root = new DockPanel();
         var titleBar = BuildTitleBar(logo);
-        var tabStrip = BuildTabStrip();
+        var tabStrip = BuildTabStrip;
         
         DockPanel.SetDock(titleBar, Dock.Top);
         DockPanel.SetDock(tabStrip, Dock.Top);
@@ -134,8 +134,7 @@ public class MainWindow : Window
             Margin = new Thickness(12, 0, 0, 0),
             Spacing = 8
         };
-        if (logo != null)
-            left.Children.Add(new Image { Source = logo, Width = 18, Height = 18 });
+        if (logo != null) left.Children.Add(new Image { Source = logo, Width = 18, Height = 18 });
         left.Children.Add(new TextBlock {
             Text = "BlackLaunch",
             VerticalAlignment = VerticalAlignment.Center,
@@ -154,10 +153,8 @@ public class MainWindow : Window
         var settingsButton = SysButton(MakeIcon(Icons.Settings, Themes.IconNeutral), 15,
             Brushes.Transparent, Brushes.Transparent, () => { });
         var minimizeButton = SysButton(MakeIcon(Icons.Minimize, Themes.IconNeutral), 15,
-            Themes.MinimizeBtnHover, Themes.MinimizeBtnPressed,
-            () => WindowState = WindowState.Minimized);
-        var closeButton = SysButton(MakeIcon(Icons.Close, Themes.IconNeutral), 15,
-            Themes.Error, Themes.CloseBtnPressed, Close);
+            Themes.MinimizeBtnHover, Themes.MinimizeBtnPressed, () => WindowState = WindowState.Minimized, true);
+        var closeButton = SysButton(MakeIcon(Icons.Close, Themes.IconNeutral), 15, Themes.Error, Themes.CloseBtnPressed, Close);
         right.Children.Add(settingsButton);
         right.Children.Add(minimizeButton);
         right.Children.Add(closeButton);
@@ -173,22 +170,21 @@ public class MainWindow : Window
         };
     }
 
-    private static Control SysButton(IconPath icon, double size, IBrush hover, IBrush pressed, Action onClick)
+    private static Control SysButton(IconPath icon, double size, IBrush hover, IBrush pressed, Action onClick, bool minimize = false)
     {
         var pill = new Border {
-            CornerRadius = new CornerRadius(10),
+            CornerRadius = new CornerRadius(3),
             Background = Brushes.Transparent
         };
         var root = new Panel {
             Width = 24,
             Height = 20,
             Background = Brushes.Transparent,
-            Children = { pill, SizedIcon(icon, size) }
+            Children = { pill, SizedIcon(icon, size, minimize) }
         };
 
         bool over = false, down = false;
-        void Apply()
-        {
+        void Apply() {
             pill.Background = down ? pressed : over ? hover : Brushes.Transparent;
             icon.Stroke = over ? Themes.TextPrimary : Themes.IconNeutral;
         }
@@ -208,36 +204,39 @@ public class MainWindow : Window
         Stretch = Stretch.None
     };
 
-    private static Control SizedIcon(IconPath icon, double size) => new Viewbox {
+    private static Control SizedIcon(IconPath icon, double size, bool minimize = false) => new Viewbox {
         Width = size,
         Height = size,
         Stretch = Stretch.Uniform,
         HorizontalAlignment = HorizontalAlignment.Center,
-        VerticalAlignment = VerticalAlignment.Center,
+        VerticalAlignment = minimize ? VerticalAlignment.Bottom : VerticalAlignment.Center,
         Child = new Canvas { Width = 24, Height = 24, Children = { icon } }
     };
-    
-    private Control BuildTabStrip()
+
+    private Control BuildTabStrip
     {
-        _playTabIcon = MakeIcon(Icons.Play, Themes.IconNeutral);
-        _serversTabIcon = MakeIcon(Icons.Servers, Themes.IconNeutral);
-
-        var strip = new StackPanel {
-            Orientation = Orientation.Horizontal,
-            Spacing = 4,
-            Margin = new Thickness(12, 6, 16, 0)
-        };
-        strip.Children.Add(BuildTab("Play", _playTabIcon, out _playTabLabel, out _playUnderline, out _playHoverBg));
-        strip.Children.Add(BuildTab("Servers", _serversTabIcon, out _serversTabLabel, out _serversUnderline, out _serversHoverBg));
-
-        return new Border {
-            Background = Themes.WindowBg,
-            BorderBrush = Themes.Divider,
-            BorderThickness = new Thickness(0, 0, 0, 1),
-            Child = strip
-        };
+        get
+        {
+            _playTabIcon = MakeIcon(Icons.Play, Themes.IconNeutral);
+            _serversTabIcon = MakeIcon(Icons.Servers, Themes.IconNeutral);
+            var strip = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 4,
+                Margin = new Thickness(12, 6, 16, 0)
+            };
+            strip.Children.Add(BuildTab("Play", _playTabIcon, out _playTabLabel, out _playUnderline, out _playHoverBg));
+            strip.Children.Add(BuildTab("Servers", _serversTabIcon, out _serversTabLabel, out _serversUnderline, out _serversHoverBg));
+            return new Border
+            {
+                Background = Themes.WindowBg,
+                BorderBrush = Themes.Divider,
+                BorderThickness = new Thickness(0, 0, 0, 1),
+                Child = strip
+            };
+        }
     }
-    
+
     private Control BuildTab(string name, IconPath icon, out TextBlock label, out Border underline, out Border hover)
     {
         var lbl = new TextBlock {
@@ -305,73 +304,75 @@ public class MainWindow : Window
         _playHoverBg.Background = Brushes.Transparent;
         _serversHoverBg.Background = Brushes.Transparent;
     }
-    
-    private Control BuildNicknameField()
+
+    private Control BuildNicknameField
     {
-        _nickIcon = MakeIcon(Icons.User, Themes.IconNeutral);
-
-        _nicknameBox = new TextBox {
-            Text = _config.Nickname,
-            Background = Brushes.Transparent,
-            BorderThickness = new Thickness(0),
-            Foreground = Themes.TextPrimary,
-            FontSize = 14,
-            VerticalContentAlignment = VerticalAlignment.Center,
-            Padding = new Thickness(6, 0, 12, 0),
-            InnerLeftContent = new Border {
-                Margin = new Thickness(10, 0, 0, 0),
-                Child = SizedIcon(_nickIcon, 16)
-            }
-        };
-
-        _nickLabel = new TextBlock {
-            Text = i18n.Get("NicknamePlaceholder"),
-            IsHitTestVisible = false,
-            Padding = new Thickness(6, 0)
-        };
-
-        _nickBorder = new Border {
-            Background = Brushes.Transparent,
-            BorderBrush = Themes.Border,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            MinHeight = 44,
-            Child = _nicknameBox
-        };
-        var overlay = new Canvas { IsHitTestVisible = false, Children = { _nickLabel } };
-        var root = new Grid { Children = { _nickBorder, overlay } };
-        
-        foreach (var pc in new string?[] { null, ":pointerover", ":focus", ":focus-within" })
+        get
         {
-            var sel = pc is null
-                ? new Style(x => x.OfType<TextBox>().Template().OfType<Border>())
-                : new Style(x => x.OfType<TextBox>().Class(pc).Template().OfType<Border>());
-            sel.Setters.Add(new Setter(Border.BorderThicknessProperty, new Thickness(0)));
-            sel.Setters.Add(new Setter(Border.BackgroundProperty, Brushes.Transparent));
-            root.Styles.Add(sel);
+            _nickIcon = MakeIcon(Icons.User, Themes.IconNeutral);
+
+            _nicknameBox = new TextBox
+            {
+                Text = _config.Nickname,
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Foreground = Themes.TextPrimary,
+                FontSize = 14,
+                VerticalContentAlignment = VerticalAlignment.Center,
+                Padding = new Thickness(6, 0, 12, 0),
+                InnerLeftContent = new Border
+                {
+                    Margin = new Thickness(10, 0, 0, 0),
+                    Child = SizedIcon(_nickIcon, 16)
+                }
+            };
+
+            _nickLabel = new TextBlock
+            {
+                Text = i18n.Get("NicknamePlaceholder"),
+                IsHitTestVisible = false,
+                Padding = new Thickness(6, 0)
+            };
+
+            _nickBorder = new Border
+            {
+                Background = Brushes.Transparent,
+                BorderBrush = Themes.Border,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                MinHeight = 44,
+                Child = _nicknameBox
+            };
+            var overlay = new Canvas { IsHitTestVisible = false, Children = { _nickLabel } };
+            var root = new Grid { Children = { _nickBorder, overlay } };
+
+            foreach (var pc in new string?[] { null, ":pointerover", ":focus", ":focus-within" })
+            {
+                var sel = pc is null
+                    ? new Style(x => x.OfType<TextBox>().Template().OfType<Border>())
+                    : new Style(x => x.OfType<TextBox>().Class(pc).Template().OfType<Border>());
+                sel.Setters.Add(new Setter(Border.BorderThicknessProperty, new Thickness(0)));
+                sel.Setters.Add(new Setter(Border.BackgroundProperty, Brushes.Transparent));
+                root.Styles.Add(sel);
+            }
+
+            SetNickState();
+            var dur = TimeSpan.FromMilliseconds(180);
+            Easing ease = new CubicEaseOut();
+            _nickLabel.Transitions = [
+                new DoubleTransition { Property = Canvas.TopProperty, Duration = dur, Easing = ease },
+                new DoubleTransition { Property = Canvas.LeftProperty, Duration = dur, Easing = ease },
+                new DoubleTransition { Property = TextBlock.FontSizeProperty, Duration = dur, Easing = ease }
+            ];
+            _nickBorder.Transitions = [ new BrushTransition { Property = Border.BorderBrushProperty, Duration = dur, Easing = ease } ];
+            _nickIcon.Transitions = [ new BrushTransition { Property = IconPath.StrokeProperty, Duration = dur, Easing = ease } ];
+
+            _nicknameBox.GotFocus += (_, _) => SetNickState();
+            _nicknameBox.LostFocus += (_, _) => SetNickState();
+            _nicknameBox.TextChanged += (_, _) => SetNickState();
+
+            return root;
         }
-        
-        SetNickState();
-
-        var dur = TimeSpan.FromMilliseconds(180);
-        Easing ease = new CubicEaseOut();
-        _nickLabel.Transitions = new Transitions {
-            new DoubleTransition { Property = Canvas.TopProperty, Duration = dur, Easing = ease },
-            new DoubleTransition { Property = Canvas.LeftProperty, Duration = dur, Easing = ease },
-            new DoubleTransition { Property = TextBlock.FontSizeProperty, Duration = dur, Easing = ease }
-        };
-        _nickBorder.Transitions = new Transitions {
-            new BrushTransition { Property = Border.BorderBrushProperty, Duration = dur, Easing = ease }
-        };
-        _nickIcon.Transitions = new Transitions {
-            new BrushTransition { Property = IconPath.StrokeProperty, Duration = dur, Easing = ease }
-        };
-
-        _nicknameBox.GotFocus += (_, _) => SetNickState();
-        _nicknameBox.LostFocus += (_, _) => SetNickState();
-        _nicknameBox.TextChanged += (_, _) => SetNickState();
-
-        return root;
     }
 
     private void SetNickState()
@@ -391,7 +392,7 @@ public class MainWindow : Window
     
     private Control BuildPlayView()
     {
-        var nicknameField = BuildNicknameField();
+        var nicknameField = BuildNicknameField;
 
         var loaders = new[] {
             new LoaderOption("Vanilla", Icons.Vanilla),
@@ -437,9 +438,9 @@ public class MainWindow : Window
             Content = i18n.Get("Play"),
             Background = Themes.Accent,
             Foreground = Themes.TextPrimary,
-            FontSize = 15,
+            FontSize = 14,
             FontWeight = FontWeight.SemiBold,
-            MinHeight = 48,
+            MinHeight = 44,
             CornerRadius = new CornerRadius(10),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Center,

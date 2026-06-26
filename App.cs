@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
 using Semi.Avalonia;
+using BlackLaunch.Views;
 
 namespace BlackLaunch;
 

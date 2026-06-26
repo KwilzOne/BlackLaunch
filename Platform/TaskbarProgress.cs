@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using System.Runtime.Versioning;
 
-namespace BlackLaunch;
+namespace BlackLaunch.Platform;
 
 public static partial class TaskbarProgress
 {

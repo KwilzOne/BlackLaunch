@@ -6,16 +6,15 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using CmlLib.Core;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using BlackLaunch.Models;
 using BlackLaunch.Services;
+using BlackLaunch.Platform;
 
-namespace BlackLaunch;
+namespace BlackLaunch.Views;
 
 public class MainWindow : Window
 {

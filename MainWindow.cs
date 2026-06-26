@@ -5,19 +5,11 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
 using CmlLib.Core;
-using CmlLib.Core.Auth;
-using CmlLib.Core.Installer.Forge;
-using CmlLib.Core.Installer.NeoForge;
-using CmlLib.Core.ModLoaders.FabricMC;
-using CmlLib.Core.ModLoaders.LiteLoader;
-using CmlLib.Core.ModLoaders.QuiltMC;
-using CmlLib.Core.ProcessBuilder;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using BlackLaunch.Models;
@@ -41,7 +33,7 @@ public class MainWindow : Window
     private readonly string _sharedPath;
     private readonly ConfigService _configService;
 
-    private Process? _runningGame;
+    private readonly GameLauncher _gameLauncher;
     private Config _config = new();
 
     public MainWindow()
@@ -188,7 +180,39 @@ public class MainWindow : Window
         rootPanel.Children.Add(mainContent);
 
         Content = rootPanel;
+        _gameLauncher = new GameLauncher(_sharedPath);
+        WireGameLauncherEvents();
         LoadVersionsAsync();
+    }
+
+    private void WireGameLauncherEvents()
+    {
+        _gameLauncher.StatusChanged += msg =>
+            Dispatcher.UIThread.Post(() => _statusText.Text = msg);
+
+        _gameLauncher.ProgressChanged += p =>
+            Dispatcher.UIThread.Post(() => {
+                _progressBar.Value = p.Percentage;
+                _progressDetailText.Text = $"{p.Percentage}% | {p.Speed} | {i18n.Get("StatusTimeLeft", p.Eta)}";
+                var hwnd = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+                if (hwnd != IntPtr.Zero) TaskbarProgress.SetProgress(hwnd, p.Percentage, 100);
+            });
+
+        _gameLauncher.ProgressFinished += ResetProgressUI;
+
+        _gameLauncher.GameStarted += () =>
+            Dispatcher.UIThread.Post(() => {
+                _statusText.Text = i18n.Get("StatusGameRunning");
+                _playButton.Content = i18n.Get("Stop");
+                _playButton.IsEnabled = true;
+            });
+        
+        _gameLauncher.GameExited += () =>
+            Dispatcher.UIThread.Post(() => {
+                _playButton.Content = i18n.Get("Play");
+                _playButton.IsEnabled = true;
+                _statusText.Text = i18n.Get("StatusReady");
+            });
     }
 
     private async void LoadVersionsAsync()
@@ -240,8 +264,8 @@ public class MainWindow : Window
 
     private async void PlayButton_Click(object? sender, RoutedEventArgs e)
     {
-        if (_runningGame != null && !_runningGame.HasExited) {
-            try { _runningGame.Kill(); } catch { }
+        if (_gameLauncher.IsRunning) {
+            _gameLauncher.Stop();
             return;
         }
         if (string.IsNullOrWhiteSpace(_nicknameBox.Text) || _versionBox.SelectedItem == null) {
@@ -260,130 +284,12 @@ public class MainWindow : Window
         _progressDetailText.IsVisible = true;
         _progressDetailText.Text = "";
         try {
-            await LaunchGameAsync(_config.Nickname, _config.Version, _config.Loader);
+            await _gameLauncher.LaunchAsync(_config.Nickname, _config.Version, _config.Loader, GetCurrentInstancePath());
         } catch (Exception ex) {
             _statusText.Text = i18n.Get("ErrorLaunch", ex.Message);
             _playButton.IsEnabled = true;
             ResetProgressUI();
         }
-    }
-
-    private async Task LaunchGameAsync(string nickname, string mcVersion, string loader)
-    {
-        var instancePath = GetCurrentInstancePath();
-        var path = new MinecraftPath() {
-            BasePath = instancePath,
-            Library = Path.Combine(_sharedPath, "libraries"),
-            Versions = Path.Combine(_sharedPath, "versions"),
-            Resource = Path.Combine(_sharedPath, "resources"),
-            Assets = Path.Combine(_sharedPath, "assets"),
-            Runtime = Path.Combine(_sharedPath, "runtime")
-        };
-        path.CreateDirs();
-
-        var launcher = new MinecraftLauncher(path);
-        var sw = Stopwatch.StartNew();
-        var updateTimer = Stopwatch.StartNew();
-        bool downloadStarted = false;
-        launcher.FileProgressChanged += (sender, args) => {
-            if (!downloadStarted) {
-                downloadStarted = true;
-                Dispatcher.UIThread.Post(() => _statusText.Text = i18n.Get("StatusDownloadingFiles"));
-            }
-            if (updateTimer.ElapsedMilliseconds > 300)
-                Dispatcher.UIThread.Post(() => _statusText.Text = i18n.Get("StatusDownloading", args.Name ?? ""));
-        };
-
-        launcher.ByteProgressChanged += (sender, args) => {
-            if (args.TotalBytes <= 0) return;
-            if (updateTimer.ElapsedMilliseconds < 100 && args.ProgressedBytes != args.TotalBytes) return;
-            updateTimer.Restart();
-
-            int percentage = (int)((args.ProgressedBytes * 100) / args.TotalBytes);
-            double totalSeconds = sw.Elapsed.TotalSeconds;
-            string speedStr = "0 MB/s";
-            string etaStr = "00:00";
-            if (totalSeconds > 0) {
-                double bytesPerSec = args.ProgressedBytes / totalSeconds;
-                speedStr = (bytesPerSec / 1024 / 1024).ToString("0.00") + " MB/s";
-                long remainingBytes = args.TotalBytes - args.ProgressedBytes;
-                if (bytesPerSec > 0) {
-                    TimeSpan eta = TimeSpan.FromSeconds(remainingBytes / bytesPerSec);
-                    etaStr = eta.ToString(@"mm\:ss");
-                }
-            }
-            Dispatcher.UIThread.Post(() => {
-                _progressBar.Value = percentage;
-                _progressDetailText.Text = $"{percentage}% | {speedStr} | {i18n.Get("StatusTimeLeft", etaStr)}";
-                var hwnd = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
-                if (hwnd != IntPtr.Zero) TaskbarProgress.SetProgress(hwnd, percentage, 100);
-            });
-        };
-
-        string versionToLaunch = mcVersion;
-        Dispatcher.UIThread.Post(() => _statusText.Text = _statusText.Text = i18n.Get("StatusPreparingLoader", loader));
-        using var httpClient = new HttpClient();
-        if (loader == "Fabric") {
-            var fabricInstaller = new FabricInstaller(httpClient);
-            versionToLaunch = await fabricInstaller.Install(mcVersion, path);
-        } else if (loader == "Forge") {
-            var forgeInstaller = new ForgeInstaller(launcher);
-            versionToLaunch = await forgeInstaller.Install(mcVersion);
-        } else if (loader == "Quilt") {
-            var quiltInstaller = new QuiltInstaller(httpClient);
-            versionToLaunch = await quiltInstaller.Install(mcVersion, path);
-        } else if (loader == "NeoForge") {
-            var neoForgeInstaller = new NeoForgeInstaller(launcher);
-            versionToLaunch = await neoForgeInstaller.Install(mcVersion);
-        } else if (loader == "LiteLoader") {
-            var liteLoaderInstaller = new LiteLoaderInstaller(httpClient);
-            var loaders = await liteLoaderInstaller.GetAllLiteLoaders();
-            var loaderToInstall = loaders.FirstOrDefault(l => l.BaseVersion == mcVersion)
-                ?? throw new Exception(i18n.Get("ErrorLiteLoader", mcVersion));
-            var baseVersion = await launcher.GetVersionAsync(mcVersion);
-            versionToLaunch = await liteLoaderInstaller.Install(loaderToInstall, baseVersion, path);
-        }
-
-        sw.Restart();
-        updateTimer.Restart();
-        Dispatcher.UIThread.Post(() => _statusText.Text = i18n.Get("StatusCheckingAssets"));
-        await launcher.InstallAsync(versionToLaunch);
-        ResetProgressUI();
-        Dispatcher.UIThread.Post(() => _statusText.Text = i18n.Get("StatusBuildingFiles"));
-
-        var jvmArguments = "-XX:+UseG1GC -Dsun.rmi.dgc.server.gcInterval=2147483646 -XX:+UnlockExperimentalVMOptions -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M -Dfile.encoding=UTF-8";
-        if (versionToLaunch == "1.16.4" || versionToLaunch == "1.16.5") {
-            jvmArguments += " -Dminecraft.api.env=custom -Dminecraft.api.auth.host=https://invalid.invalid -Dminecraft.api.account.host=https://invalid.invalid -Dminecraft.api.session.host=https://invalid.invalid -Dminecraft.api.services.host=https://invalid.invalid";
-        }
-        var arguments = new MArgument[] { MArgument.FromCommandLine(jvmArguments) };
-        var launchOptions = new MLaunchOption {
-            Session = MSession.CreateOfflineSession(nickname),
-            MaximumRamMb = 4096,
-            MinimumRamMb = 1024,
-            FullScreen = false,
-            ExtraJvmArguments = arguments
-        };
-        var process = await launcher.BuildProcessAsync(versionToLaunch, launchOptions);
-        _runningGame = process;
-        _runningGame.EnableRaisingEvents = true;
-        _runningGame.Exited += (s, ev) => {
-            Dispatcher.UIThread.Post(() => {
-                _runningGame = null;
-                _playButton.Content = i18n.Get("Play");
-                _playButton.IsEnabled = true;
-                _statusText.Text = i18n.Get("StatusReady");
-            });
-        };
-
-        Dispatcher.UIThread.Post(() => {
-            _statusText.Text = i18n.Get("StatusGameRunning");
-            _playButton.Content = i18n.Get("Stop");
-            _playButton.IsEnabled = true;
-        });
-
-        var processWrapper = new ProcessWrapper(process);
-        processWrapper.OutputReceived += (s, log) => Console.WriteLine($"[MINECRAFT] {log}");
-        processWrapper.StartWithEvents();
     }
 
     private void ResetProgressUI()

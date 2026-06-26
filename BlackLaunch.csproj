@@ -51,6 +51,11 @@
     <TrimmerRootAssembly Include="CmlLib.Core.Installer.NeoForge" />
     <TrimmerRootAssembly Include="HtmlAgilityPack" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Models\" />
+    <Folder Include="Services\" />
+    <Folder Include="ViewModels\" />
+  </ItemGroup>
   <Target Name="RemovePdbFiles" AfterTargets="ComputeResolvedFilesToPublishList">
     <ItemGroup>
       <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.pdb'" />

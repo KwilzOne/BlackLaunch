@@ -22,6 +22,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using BlackLaunch.Models;
 
 namespace BlackLaunch;
 
@@ -415,14 +416,3 @@ public class MainWindow : Window
         });
     }
 }
-
-public class Config
-{
-    public string Nickname { get; set; } = "";
-    public string Version { get; set; } = "";
-    public string Loader { get; set; } = "Vanilla";
-    public List<string> CachedVersions { get; set; } = [];
-}
-
-[JsonSerializable(typeof(Config))]
-internal partial class ConfigContext : JsonSerializerContext {}

@@ -50,7 +50,6 @@ public class MainWindow : Window
     private Border _serversHoverBg = new();
     private TextBlock _playTabLabel = new();
     private TextBlock _serversTabLabel = new();
-    private string _activeTab = "Play";
 
     private readonly string _baseLauncherPath;
     private readonly string _sharedPath;
@@ -68,6 +67,13 @@ public class MainWindow : Window
     private Button _deleteInstanceBtn = new();
 
     private readonly HttpClient _httpClient = new();
+
+    enum TabName
+    {
+        Play,
+        Servers
+    }
+    private TabName _activeTab = TabName.Play;
     
     private static void StyleField(TemplatedControl c)
     {
@@ -181,7 +187,7 @@ public class MainWindow : Window
         UpdateInstancesDropdown();
         UpdateActiveInstanceUI();
 
-        SelectTab("Play");
+        SelectTab(TabName.Play);
         _gameLauncher = new GameLauncher(_sharedPath);
         WireGameLauncherEvents();
         LoadVersionsAsync();
@@ -217,8 +223,9 @@ public class MainWindow : Window
         var settingsButton = SysButton(MakeIcon(Icons.Settings, Themes.IconNeutral), 15,
             Brushes.Transparent, Brushes.Transparent, () => { });
         var minimizeButton = SysButton(MakeIcon(Icons.Minimize, Themes.IconNeutral), 15,
-            Themes.MinimizeBtnHover, Themes.MinimizeBtnPressed, () => WindowState = WindowState.Minimized, true);
-        var closeButton = SysButton(MakeIcon(Icons.Close, Themes.IconNeutral), 15, Themes.Error, Themes.CloseBtnPressed, Close);
+            Brushes.Transparent, Brushes.Transparent, () => WindowState = WindowState.Minimized, true);
+        var closeButton = SysButton(MakeIcon(Icons.Close, Themes.IconNeutral), 15, 
+            Brushes.Transparent, Brushes.Transparent, Close);
         right.Children.Add(settingsButton);
         right.Children.Add(minimizeButton);
         right.Children.Add(closeButton);
@@ -289,8 +296,8 @@ public class MainWindow : Window
                 Spacing = 4,
                 Margin = new Thickness(12, 6, 16, 0)
             };
-            strip.Children.Add(BuildTab("Play", _playTabIcon, out _playTabLabel, out _playUnderline, out _playHoverBg));
-            strip.Children.Add(BuildTab("Servers", _serversTabIcon, out _serversTabLabel, out _serversUnderline, out _serversHoverBg));
+            strip.Children.Add(BuildTab(TabName.Play, _playTabIcon, out _playTabLabel, out _playUnderline, out _playHoverBg));
+            strip.Children.Add(BuildTab(TabName.Servers, _serversTabIcon, out _serversTabLabel, out _serversUnderline, out _serversHoverBg));
             return new Border
             {
                 Background = Themes.WindowBg,
@@ -301,10 +308,10 @@ public class MainWindow : Window
         }
     }
 
-    private StackPanel BuildTab(string name, IconPath icon, out TextBlock label, out Border underline, out Border hover)
+    private StackPanel BuildTab(TabName name, IconPath icon, out TextBlock label, out Border underline, out Border hover)
     {
         var lbl = new TextBlock {
-            Text = name,
+            Text = i18n.Get($"{name}Tab"),
             FontSize = 13,
             FontWeight = FontWeight.Medium,
             VerticalAlignment = VerticalAlignment.Center,
@@ -353,9 +360,9 @@ public class MainWindow : Window
         return stack;
     }
     
-    private void SelectTab(string name)
+    private void SelectTab(TabName name)
     {
-        bool play = name == "Play";
+        bool play = name == TabName.Play;
         _activeTab = name;
         _tabContent.Content = play ? _playView : _serversView;
 

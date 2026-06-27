@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
 
 namespace BlackLaunch;
@@ -12,6 +12,8 @@ internal static class i18n
     {
         {
             "en", new Dictionary<string, string> {
+                { "PlayTab", "Play" },
+                { "ServersTab", "Monitoring" },
                 { "LaunchSettings", "Launch Settings" },
                 { "NicknamePlaceholder", "Nickname" },
                 { "LoadingVersions", "Loading versions list..." },
@@ -63,6 +65,8 @@ internal static class i18n
             }
         }, {
             "ru", new Dictionary<string, string> {
+                { "PlayTab", "Игра" },
+                { "ServersTab", "Мониторинг" },
                 { "LaunchSettings", "Настройки запуска" },
                 { "NicknamePlaceholder", "Игровой ник" },
                 { "LoadingVersions", "Загрузка списка версий" },

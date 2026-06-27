@@ -25,29 +25,29 @@ namespace BlackLaunch.Views;
 
 public class MainWindow : Window
 {
-    private IconPath _playTabIcon = null!;
-    private IconPath _serversTabIcon = null!;
-    private ComboBox _versionBox = null!;
-    private ComboBox _loaderBox = null!;
-    private TextBox _nicknameBox = null!;
-    private Button _playButton = null!;
-    private Button _openFolderButton = null!;
-    private TextBlock _statusText = null!;
-    private ProgressBar _progressBar = null!;
-    private TextBlock _progressDetailText = null!;
+    private IconPath _playTabIcon = new();
+    private IconPath _serversTabIcon = new();
+    private ComboBox _versionBox = new();
+    private ComboBox _loaderBox = new();
+    private TextBox _nicknameBox = new();
+    private Button _playButton = new();
+    private Button _openFolderButton = new();
+    private TextBlock _statusText = new();
+    private ProgressBar _progressBar = new();
+    private TextBlock _progressDetailText = new();
 
     private readonly ContentControl _tabContent = new() { Margin = new Thickness(0) };
-    private readonly Control _playView = null!;
-    private readonly Control _serversView = null!;
-    private Border _playUnderline = null!;
-    private Border _serversUnderline = null!;
-    private Border _playHoverBg = null!;
-    private Border _serversHoverBg = null!;
-    private TextBlock _playTabLabel = null!;
-    private TextBlock _serversTabLabel = null!;
-    private TextBlock _nickLabel = null!;
-    private IconPath _nickIcon = null!;
-    private Border _nickBorder = null!;
+    private readonly Control _playView = new();
+    private readonly Control _serversView = new();
+    private Border _playUnderline = new();
+    private Border _serversUnderline = new();
+    private Border _playHoverBg = new();
+    private Border _serversHoverBg = new();
+    private TextBlock _playTabLabel = new();
+    private TextBlock _serversTabLabel = new();
+    private TextBlock _nickLabel = new();
+    private IconPath _nickIcon = new();
+    private Border _nickBorder = new();
     private string _activeTab = "Play";
 
     private readonly string _baseLauncherPath;

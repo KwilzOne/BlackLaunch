@@ -36,7 +36,7 @@ public class MainWindow : Window
     private ProgressBar _progressBar = new();
     private TextBlock _progressDetailText = new();
 
-    private readonly ContentControl _tabContent = new() { Margin = new Thickness(0) };
+    private readonly ContentControl _tabContent = new();
     private readonly Control _playView = new();
     private readonly Control _serversView = new();
     private Border _playUnderline = new();

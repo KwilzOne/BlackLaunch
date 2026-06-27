@@ -37,8 +37,8 @@ public class MainWindow : Window
     private TextBlock _progressDetailText = new();
 
     private readonly ContentControl _tabContent = new();
-    private readonly Control _playView = new();
-    private readonly Control _serversView = new();
+    private readonly DockPanel _playView;
+    private readonly TextBlock _serversView;
     private Border _playUnderline = new();
     private Border _serversUnderline = new();
     private Border _playHoverBg = new();
@@ -123,7 +123,7 @@ public class MainWindow : Window
         LoadVersionsAsync();
     }
 
-    private Control BuildTitleBar(Bitmap? logo)
+    private Border BuildTitleBar(Bitmap? logo)
     {
         var bar = new Grid { Background = Brushes.Transparent };
         bar.PointerPressed += (s, e) => BeginMoveDrag(e);
@@ -170,7 +170,7 @@ public class MainWindow : Window
         };
     }
 
-    private static Control SysButton(IconPath icon, double size, IBrush hover, IBrush pressed, Action onClick, bool minimize = false)
+    private static Panel SysButton(IconPath icon, double size, IBrush hover, IBrush pressed, Action onClick, bool minimize = false)
     {
         var pill = new Border {
             CornerRadius = new CornerRadius(3),
@@ -204,7 +204,7 @@ public class MainWindow : Window
         Stretch = Stretch.None
     };
 
-    private static Control SizedIcon(IconPath icon, double size, bool minimize = false) => new Viewbox {
+    private static Viewbox SizedIcon(IconPath icon, double size, bool minimize = false) => new Viewbox {
         Width = size,
         Height = size,
         Stretch = Stretch.Uniform,
@@ -213,7 +213,7 @@ public class MainWindow : Window
         Child = new Canvas { Width = 24, Height = 24, Children = { icon } }
     };
 
-    private Control BuildTabStrip
+    private Border BuildTabStrip
     {
         get
         {
@@ -237,7 +237,7 @@ public class MainWindow : Window
         }
     }
 
-    private Control BuildTab(string name, IconPath icon, out TextBlock label, out Border underline, out Border hover)
+    private StackPanel BuildTab(string name, IconPath icon, out TextBlock label, out Border underline, out Border hover)
     {
         var lbl = new TextBlock {
             Text = name,
@@ -305,7 +305,7 @@ public class MainWindow : Window
         _serversHoverBg.Background = Brushes.Transparent;
     }
 
-    private Control BuildNicknameField
+    private Grid BuildNicknameField
     {
         get
         {
@@ -390,7 +390,7 @@ public class MainWindow : Window
         _nickIcon.Stroke = focused ? Themes.Accent : Themes.IconNeutral;
     }
     
-    private Control BuildPlayView()
+    private DockPanel BuildPlayView()
     {
         var nicknameField = BuildNicknameField;
 
@@ -514,7 +514,7 @@ public class MainWindow : Window
         return dock;
     }
 
-    private Control BuildServersView() => new TextBlock {
+    private TextBlock BuildServersView() => new TextBlock {
         Text = "Servers soon..",
         Foreground = Themes.TextTertiary,
         HorizontalAlignment = HorizontalAlignment.Center,

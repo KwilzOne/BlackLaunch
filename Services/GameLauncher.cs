@@ -34,7 +34,7 @@ public class GameLauncher(string sharedPath)
 
     public void Stop() { if (IsRunning) try { _runningGame?.Kill(); } catch {} }
 
-    public async Task LaunchAsync(string nickname, string mcVersion, string loader, string instancePath)
+    public async Task LaunchAsync(string nickname, string mcVersion, string loader, string loaderVersion, string instancePath)
     {
         var path = new MinecraftPath() {
             BasePath = instancePath,
@@ -62,7 +62,7 @@ public class GameLauncher(string sharedPath)
             if (args.TotalBytes <= 0) return;
             if (updateTimer.ElapsedMilliseconds < 100 && args.ProgressedBytes != args.TotalBytes) return;
             updateTimer.Restart();
-
+ 
             int percentage = (int)((args.ProgressedBytes * 100) / args.TotalBytes);
             double totalSeconds = sw.Elapsed.TotalSeconds;
             string speedStr = "0 MB/s";
@@ -83,21 +83,35 @@ public class GameLauncher(string sharedPath)
         StatusChanged?.Invoke(i18n.Get("StatusPreparingLoader", loader));
         if (loader == "Fabric") {
             var fabricInstaller = new FabricInstaller(_httpClient);
-            versionToLaunch = await fabricInstaller.Install(mcVersion, path);
+            if (string.IsNullOrEmpty(loaderVersion))
+                versionToLaunch = await fabricInstaller.Install(mcVersion, path);
+            else
+                versionToLaunch = await fabricInstaller.Install(mcVersion, loaderVersion, path);
         } else if (loader == "Forge") {
             var forgeInstaller = new ForgeInstaller(launcher);
-            versionToLaunch = await forgeInstaller.Install(mcVersion);
+            if (string.IsNullOrEmpty(loaderVersion))
+                versionToLaunch = await forgeInstaller.Install(mcVersion);
+            else
+                versionToLaunch = await forgeInstaller.Install(mcVersion, loaderVersion);
         } else if (loader == "Quilt") {
             var quiltInstaller = new QuiltInstaller(_httpClient);
-            versionToLaunch = await quiltInstaller.Install(mcVersion, path);
+            if (string.IsNullOrEmpty(loaderVersion))
+                versionToLaunch = await quiltInstaller.Install(mcVersion, path);
+            else
+                versionToLaunch = await quiltInstaller.Install(mcVersion, loaderVersion, path);
         } else if (loader == "NeoForge") {
             var neoForgeInstaller = new NeoForgeInstaller(launcher);
-            versionToLaunch = await neoForgeInstaller.Install(mcVersion);
+            if (string.IsNullOrEmpty(loaderVersion))
+                versionToLaunch = await neoForgeInstaller.Install(mcVersion);
+            else
+                versionToLaunch = await neoForgeInstaller.Install(mcVersion, loaderVersion);
         } else if (loader == "LiteLoader") {
             var liteLoaderInstaller = new LiteLoaderInstaller(_httpClient);
             var loaders = await liteLoaderInstaller.GetAllLiteLoaders();
-            var loaderToInstall = loaders.FirstOrDefault(l => l.BaseVersion == mcVersion)
-                                  ?? throw new Exception(i18n.Get("ErrorLiteLoader", mcVersion));
+            var loaderToInstall = (string.IsNullOrEmpty(loaderVersion)
+                ? loaders.FirstOrDefault(l => l.BaseVersion == mcVersion)
+                : loaders.FirstOrDefault(l => l.BaseVersion == mcVersion && l.Version == loaderVersion))
+                ?? throw new Exception(i18n.Get("ErrorLiteLoader", mcVersion));
             var baseVersion = await launcher.GetVersionAsync(mcVersion);
             versionToLaunch = await liteLoaderInstaller.Install(loaderToInstall, baseVersion, path);
         }

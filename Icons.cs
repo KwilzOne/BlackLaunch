@@ -37,4 +37,10 @@ internal static class Icons
 
     public const string LiteLoader =
         "M12 2C8 2 4 8 4 14a8 8 0 0 0 16 0c0-6-4-12-8-12";
+
+    public const string Plus = "M12 5v14M5 12h14";
+
+    public const string Trash = "M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2";
+
+    public const string Edit = "M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z";
 }

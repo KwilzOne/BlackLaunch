@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace BlackLaunch;
@@ -30,7 +30,36 @@ internal static class i18n
                 { "StatusCheckingAssets", "Checking libraries and assets.." },
                 { "StatusBuildingFiles", "Building game files.." },
                 { "StatusReady", "Ready to launch" },
-                { "StatusGameRunning", "Game is running" }
+                { "StatusGameRunning", "Game is running" },
+                { "NoProfile", "No Profile" },
+                { "NoInstanceSelected", "No Instance Selected" },
+                { "SelectInstanceLabel", "SELECT INSTANCE" },
+                { "CreateInstanceTooltip", "Create Instance" },
+                { "EditInstanceTooltip", "Edit Instance" },
+                { "DeleteInstanceTooltip", "Delete Instance" },
+                { "ProfilesTitle", "PROFILES" },
+                { "SelectProfileBtn", "Select" },
+                { "ActiveProfileTag", "Active" },
+                { "CreateProfileBtn", "+ Create Profile" },
+                { "CreateProfileTitle", "CREATE PROFILE" },
+                { "NicknameLabel", "NICKNAME" },
+                { "EnterNicknamePlaceholder", "Enter nickname" },
+                { "SkinLabel", "SKIN (PNG, OPTIONAL)" },
+                { "ChooseSkinBtn", "Choose skin file..." },
+                { "CancelBtn", "Cancel" },
+                { "SaveBtn", "Save" },
+                { "CreateInstanceTitle", "CREATE INSTANCE" },
+                { "EditInstanceTitle", "EDIT INSTANCE" },
+                { "InstanceNameLabel", "INSTANCE NAME" },
+                { "InstanceNamePlaceholder", "My Minecraft Instance" },
+                { "GameVersionLabel", "GAME VERSION" },
+                { "ModLoaderLabel", "MOD LOADER" },
+                { "LoaderVersionLabel", "LOADER VERSION" },
+                { "LoadingVersionsPlaceholder", "Loading versions" },
+                { "NoVersionsPlaceholder", "No versions available" },
+                { "ErrorLoadingVersionsPlaceholder", "Error loading versions" },
+                { "CreateBtn", "Create" },
+                { "ErrorSelectProfileAndInstance", "Please select or create a profile and instance first." }
             }
         }, {
             "ru", new Dictionary<string, string> {
@@ -52,7 +81,36 @@ internal static class i18n
                 { "StatusCheckingAssets", "Проверка библиотек и ассетов.." },
                 { "StatusBuildingFiles", "Сборка файлов игры.." },
                 { "StatusReady", "Готово к запуску" },
-                { "StatusGameRunning", "Игра запущена" }
+                { "StatusGameRunning", "Игра запущена" },
+                { "NoProfile", "Нет профиля" },
+                { "NoInstanceSelected", "Сборка не выбрана" },
+                { "SelectInstanceLabel", "ВЫБЕРИТЕ СБОРКУ" },
+                { "CreateInstanceTooltip", "Создать сборку" },
+                { "EditInstanceTooltip", "Редактировать сборку" },
+                { "DeleteInstanceTooltip", "Удалить сборку" },
+                { "ProfilesTitle", "ПРОФИЛИ" },
+                { "SelectProfileBtn", "Выбрать" },
+                { "ActiveProfileTag", "Активен" },
+                { "CreateProfileBtn", "+ Создать профиль" },
+                { "CreateProfileTitle", "СОЗДАНИЕ ПРОФИЛЯ" },
+                { "NicknameLabel", "ИГРОВОЙ НИК" },
+                { "EnterNicknamePlaceholder", "Введите ник" },
+                { "SkinLabel", "СКИН (PNG, НЕОБЯЗАТЕЛЬНО)" },
+                { "ChooseSkinBtn", "Выбрать файл скина..." },
+                { "CancelBtn", "Отмена" },
+                { "SaveBtn", "Сохранить" },
+                { "CreateInstanceTitle", "СОЗДАНИЕ СБОРКИ" },
+                { "EditInstanceTitle", "РЕДАКТИРОВАНИЕ СБОРКИ" },
+                { "InstanceNameLabel", "НАЗВАНИЕ СБОРКИ" },
+                { "InstanceNamePlaceholder", "Моя сборка Minecraft" },
+                { "GameVersionLabel", "ВЕРСИЯ ИГРЫ" },
+                { "ModLoaderLabel", "ЗАГРУЗЧИК МОДОВ" },
+                { "LoaderVersionLabel", "ВЕРСИЯ ЗАГРУЗЧИКА" },
+                { "LoadingVersionsPlaceholder", "Загрузка версий" },
+                { "NoVersionsPlaceholder", "Нет доступных версий" },
+                { "ErrorLoadingVersionsPlaceholder", "Ошибка загрузки версий" },
+                { "CreateBtn", "Создать" },
+                { "ErrorSelectProfileAndInstance", "Пожалуйста, сначала выберите или создайте профиль и сборку." }
             }
         }
     };

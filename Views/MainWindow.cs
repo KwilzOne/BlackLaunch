@@ -16,6 +16,7 @@ using Avalonia.Styling;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using IconPath = Avalonia.Controls.Shapes.Path;
@@ -28,6 +29,7 @@ using CmlLib.Core.Installer.NeoForge;
 using BlackLaunch.Models;
 using BlackLaunch.Services;
 using BlackLaunch.Platform;
+using Path = System.IO.Path;
 
 namespace BlackLaunch.Views;
 
@@ -220,12 +222,87 @@ public class MainWindow : Window
             Margin = new Thickness(0, 0, 12, 0),
             Spacing = 12
         };
-        var settingsButton = SysButton(MakeIcon(Icons.Settings, Themes.IconNeutral), 15,
-            Brushes.Transparent, Brushes.Transparent, () => { });
-        var minimizeButton = SysButton(MakeIcon(Icons.Minimize, Themes.IconNeutral), 15,
-            Brushes.Transparent, Brushes.Transparent, () => WindowState = WindowState.Minimized, true);
-        var closeButton = SysButton(MakeIcon(Icons.Close, Themes.IconNeutral), 15, 
-            Brushes.Transparent, Brushes.Transparent, Close);
+        
+        var settingsButton = new Button
+        {
+            Width = 24,
+            Height = 20,
+            Background = Brushes.Transparent,
+            CornerRadius = new CornerRadius(3),
+            Padding = new Thickness(0),
+            BorderThickness = new Thickness(0),
+        };
+        var iconSettings = MakeIcon(Icons.Settings);
+        iconSettings.Stroke = Themes.IconNeutral;
+        settingsButton.Content = SizedIcon(iconSettings, 15);
+        settingsButton.PointerEntered += (s, e) =>
+        {
+            iconSettings.Stroke = Themes.TextPrimary;
+        };
+        settingsButton.PointerExited += (s, e) =>
+        {
+            iconSettings.Stroke = Themes.IconNeutral;
+        };
+        
+        var minimizeButton = new Button
+        {
+            Width = 24,
+            Height = 20,
+            Background = Brushes.Transparent,
+            CornerRadius = new CornerRadius(3),
+            Padding = new Thickness(0, 5),
+            BorderThickness = new Thickness(0),
+            VerticalContentAlignment = VerticalAlignment.Bottom,
+        };
+        var iconMinimize = MakeIcon(Icons.Minimize);
+        iconMinimize.Stroke = Themes.IconNeutral;
+        minimizeButton.Content = SizedIcon(iconMinimize, 15);
+        minimizeButton.PointerEntered += (s, e) =>
+        {
+            iconMinimize.Stroke = Themes.TextPrimary;
+        };
+        minimizeButton.PointerExited += (s, e) =>
+        {
+            iconMinimize.Stroke = Themes.IconNeutral;
+        };
+        minimizeButton.Click += (s, e) =>
+        {
+            WindowState = WindowState.Minimized;
+        };
+        
+        var closeButton = new Button
+        {
+            Width = 24,
+            Height = 20,
+            Background = Brushes.Transparent,
+            CornerRadius = new CornerRadius(3),
+            Padding = new Thickness(0),
+            BorderThickness = new Thickness(0),
+        };
+        var iconClose = MakeIcon(Icons.Close);
+        iconClose.Stroke = Themes.IconNeutral;
+        closeButton.Content = SizedIcon(iconClose, 15);
+        closeButton.PointerEntered += (s, e) =>
+        {
+            iconClose.Stroke = Themes.TextPrimary;
+        };
+        closeButton.PointerExited += (s, e) =>
+        {
+            iconClose.Stroke = Themes.IconNeutral;
+        };
+        closeButton.Click += (s, e) =>
+        {
+            Close();
+        };
+        
+        right.Styles.Add(new Style(x => x.OfType<Button>().Class(":pointerover").Template().OfType<ContentPresenter>())
+        {
+            Setters = { new Setter(ContentPresenter.BackgroundProperty, Brushes.Transparent) }
+        });
+        right.Styles.Add(new Style(x => x.OfType<Button>().Class(":pressed").Template().OfType<ContentPresenter>())
+        {
+            Setters = { new Setter(ContentPresenter.BackgroundProperty, Brushes.Transparent) }
+        });
         right.Children.Add(settingsButton);
         right.Children.Add(minimizeButton);
         right.Children.Add(closeButton);
@@ -240,47 +317,20 @@ public class MainWindow : Window
             Child = bar
         };
     }
-
-    private static Panel SysButton(IconPath icon, double size, IBrush hover, IBrush pressed, Action onClick, bool minimize = false)
-    {
-        var pill = new Border {
-            CornerRadius = new CornerRadius(3),
-            Background = Brushes.Transparent
-        };
-        var root = new Panel {
-            Width = 24,
-            Height = 20,
-            Background = Brushes.Transparent,
-            Children = { pill, SizedIcon(icon, size, minimize) }
-        };
-
-        bool over = false, down = false;
-        void Apply() {
-            pill.Background = down ? pressed : over ? hover : Brushes.Transparent;
-            icon.Stroke = over ? Themes.TextPrimary : Themes.IconNeutral;
-        }
-        root.PointerEntered += (_, _) => { over = true; Apply(); };
-        root.PointerExited += (_, _) => { over = false; down = false; Apply(); };
-        root.PointerPressed += (_, e) => { down = true; Apply(); e.Handled = true; };
-        root.PointerReleased += (_, _) => { if (down && over) onClick(); down = false; Apply(); };
-        return root;
-    }
     
-    private static IconPath MakeIcon(string data, IBrush stroke, double thickness = 2) => new() {
+    private static IconPath MakeIcon(string data, double thickness = 2) => new() {
         Data = Geometry.Parse(data),
-        Stroke = stroke,
         StrokeThickness = thickness,
         StrokeLineCap = PenLineCap.Round,
         StrokeJoin = PenLineJoin.Round,
         Stretch = Stretch.None
     };
 
-    private static Viewbox SizedIcon(IconPath icon, double size, bool minimize = false) => new() {
+    private static Viewbox SizedIcon(IconPath icon, double size) => new() {
         Width = size,
         Height = size,
         Stretch = Stretch.Uniform,
         HorizontalAlignment = HorizontalAlignment.Center,
-        VerticalAlignment = minimize ? VerticalAlignment.Bottom : VerticalAlignment.Center,
         Child = new Canvas { Width = 24, Height = 24, Children = { icon } }
     };
 
@@ -288,8 +338,10 @@ public class MainWindow : Window
     {
         get
         {
-            _playTabIcon = MakeIcon(Icons.Play, Themes.IconNeutral);
-            _serversTabIcon = MakeIcon(Icons.Servers, Themes.IconNeutral);
+            _playTabIcon = MakeIcon(Icons.Play);
+            _playTabIcon.Stroke = Themes.IconNeutral;
+            _serversTabIcon = MakeIcon(Icons.Servers);
+            _serversTabIcon.Stroke = Themes.IconNeutral;
             var strip = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
@@ -392,8 +444,10 @@ public class MainWindow : Window
             VerticalAlignment = VerticalAlignment.Center
         };
 
+        var profileBtnIcon = MakeIcon(Icons.Settings);
+        profileBtnIcon.Stroke = Themes.IconNeutral;
         var profileSelectBtn = new Button {
-            Content = SizedIcon(MakeIcon(Icons.Settings, Themes.IconNeutral), 16),
+            Content = SizedIcon(profileBtnIcon, 16),
             Width = 36,
             Height = 36,
             CornerRadius = new CornerRadius(8),
@@ -448,7 +502,14 @@ public class MainWindow : Window
                 Spacing = 10,
                 VerticalAlignment = VerticalAlignment.Center,
                 Children = {
-                    SizedIcon(MakeIcon(GetLoaderIcon(inst.Loader), Themes.IconNeutral), 18),
+                    SizedIcon(new IconPath {
+                        Data = Geometry.Parse(GetLoaderIcon(inst.Loader)),
+                        Stroke = Themes.IconNeutral,
+                        StrokeThickness = 2,
+                        StrokeLineCap = PenLineCap.Round,
+                        StrokeJoin = PenLineJoin.Round,
+                        Stretch = Stretch.None
+                    }, 18),
                     new TextBlock { Text = inst.Name, VerticalAlignment = VerticalAlignment.Center, Foreground = Themes.TextPrimary, FontSize = 14 }
                 }
             }, false)
@@ -462,8 +523,10 @@ public class MainWindow : Window
             }
         };
 
+        var plusBtnIcon = MakeIcon(Icons.Plus);
+        plusBtnIcon.Stroke = Themes.IconNeutral;
         var addInstanceBtn = new Button {
-            Content = SizedIcon(MakeIcon(Icons.Plus, Themes.IconNeutral), 16),
+            Content = SizedIcon(plusBtnIcon, 16),
             Width = 44,
             Height = 44,
             CornerRadius = new CornerRadius(8),
@@ -475,9 +538,11 @@ public class MainWindow : Window
         };
         addInstanceBtn.Click += (_, _) => ShowInstanceModal();
         ToolTip.SetTip(addInstanceBtn, i18n.Get("CreateInstanceTooltip"));
-
+        
+        var editBtnIcon = MakeIcon(Icons.Edit);
+        editBtnIcon.Stroke = Themes.IconNeutral;
         _editInstanceBtn = new Button {
-            Content = SizedIcon(MakeIcon(Icons.Edit, Themes.IconNeutral), 16),
+            Content = SizedIcon(editBtnIcon, 16),
             Width = 44,
             Height = 44,
             CornerRadius = new CornerRadius(8),
@@ -492,8 +557,10 @@ public class MainWindow : Window
         };
         ToolTip.SetTip(_editInstanceBtn, i18n.Get("EditInstanceTooltip"));
 
+        var deleteBtnIcon = MakeIcon(Icons.Trash);
+        deleteBtnIcon.Stroke = Themes.Error;
         _deleteInstanceBtn = new Button {
-            Content = SizedIcon(MakeIcon(Icons.Trash, Themes.Error), 16),
+            Content = SizedIcon(deleteBtnIcon, 16),
             Width = 44,
             Height = 44,
             CornerRadius = new CornerRadius(8),
@@ -547,9 +614,11 @@ public class MainWindow : Window
             VerticalContentAlignment = VerticalAlignment.Center
         };
         _playButton.Click += PlayButton_Click;
-
+        
+        var openFolderBtnIcon = MakeIcon(Icons.Folder);
+        openFolderBtnIcon.Stroke = Themes.IconNeutral;
         _openFolderButton = new Button {
-            Content = SizedIcon(MakeIcon(Icons.Folder, Themes.IconNeutral), 18),
+            Content = SizedIcon(openFolderBtnIcon, 18),
             Width = 48,
             MinHeight = 48,
             CornerRadius = new CornerRadius(10),
@@ -699,8 +768,41 @@ public class MainWindow : Window
             Foreground = Themes.TextPrimary,
             VerticalAlignment = VerticalAlignment.Center
         });
-        var closeBtn = SysButton(MakeIcon(Icons.Close, Themes.IconNeutral), 14, Themes.MinimizeBtnHover, Themes.MinimizeBtnPressed, HideModal);
+        
+        var closeBtn = new Button
+        {
+            Width = 24,
+            Height = 20,
+            Background = Brushes.Transparent,
+            CornerRadius = new CornerRadius(3),
+            Padding = new Thickness(0),
+            BorderThickness = new Thickness(0),
+        };
+        var closeBtnIcon = MakeIcon(Icons.Close);
+        closeBtnIcon.Stroke = Themes.IconNeutral;
+        closeBtn.Content = SizedIcon(closeBtnIcon, 14);
+        closeBtn.PointerEntered += (s, e) =>
+        {
+            closeBtnIcon.Stroke = Themes.TextPrimary;
+        };
+        closeBtn.PointerExited += (s, e) =>
+        {
+            closeBtnIcon.Stroke = Themes.IconNeutral;
+        };
+        closeBtn.Click += (s, e) =>
+        {
+            HideModal();
+        };
+        
         Grid.SetColumn(closeBtn, 1);
+        header.Styles.Add(new Style(x => x.OfType<Button>().Class(":pointerover").Template().OfType<ContentPresenter>())
+        {
+            Setters = { new Setter(ContentPresenter.BackgroundProperty, Brushes.Transparent) },
+        });
+        header.Styles.Add(new Style(x => x.OfType<Button>().Class(":pressed").Template().OfType<ContentPresenter>())
+        {
+            Setters = { new Setter(ContentPresenter.BackgroundProperty, Brushes.Transparent) },
+        });
         header.Children.Add(closeBtn);
         panel.Children.Add(header);
 
@@ -745,9 +847,11 @@ public class MainWindow : Window
                     BuildManageProfilesView();
                 };
                 actions.Children.Add(selectBtn);
-
+                
+                var deleteBtnIcon = MakeIcon(Icons.Trash);
+                deleteBtnIcon.Stroke = Themes.Error;
                 var deleteBtn = new Button {
-                    Content = SizedIcon(MakeIcon(Icons.Trash, Themes.Error), 12),
+                    Content = SizedIcon(deleteBtnIcon, 12),
                     Padding = new Thickness(8, 4),
                     Background = Brushes.Transparent,
                     BorderThickness = new Thickness(0),

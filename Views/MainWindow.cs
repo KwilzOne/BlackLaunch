@@ -258,14 +258,28 @@ public class MainWindow : Window
         };
         var iconSettings = MakeIcon(Icons.Settings);
         iconSettings.Stroke = Themes.IconNeutral;
-        settingsButton.Content = SizedIcon(iconSettings, 15);
+        var iconWrapper = SizedIcon(iconSettings, 15);
+        iconWrapper.RenderTransform = TransformOperations.Parse("rotate(0deg)");
+        iconWrapper.RenderTransformOrigin = RelativePoint.Center;
+        iconWrapper.Transitions = new Transitions
+        {
+            new TransformOperationsTransition
+            {
+                Property = RenderTransformProperty,
+                Duration = TimeSpan.FromMilliseconds(450),
+                Easing = new Avalonia.Animation.Easings.CubicEaseOut()
+            }
+        };
+        settingsButton.Content = iconWrapper;
         settingsButton.PointerEntered += (_, _) =>
         {
             iconSettings.Stroke = Themes.TextPrimary;
+            iconWrapper.RenderTransform = TransformOperations.Parse("rotate(90deg)");
         };
         settingsButton.PointerExited += (_, _) =>
         {
             iconSettings.Stroke = Themes.IconNeutral;
+            iconWrapper.RenderTransform = TransformOperations.Parse("rotate(0deg)");
         };
         
         var minimizeButton = new Button

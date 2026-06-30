@@ -36,7 +36,8 @@ internal static class i18n
                 { "NoProfile", "No Profile" },
                 { "ChangeBtnText", "Change" },
                 { "NoInstanceSelected", "No Instance Selected" },
-                { "SelectInstanceLabel", "SELECT INSTANCE" },
+                { "SelectInstanceLabel", "Selected instance" },
+                { "ListInstanceLabel", "My instances" },
                 { "CreateInstanceTooltip", "Create Instance" },
                 { "EditInstanceTooltip", "Edit Instance" },
                 { "DeleteInstanceTooltip", "Delete Instance" },
@@ -63,7 +64,8 @@ internal static class i18n
                 { "NoVersionsPlaceholder", "No versions available" },
                 { "ErrorLoadingVersionsPlaceholder", "Error loading versions" },
                 { "CreateBtn", "Create" },
-                { "ErrorSelectProfileAndInstance", "Please select or create a profile and instance first." }
+                { "ErrorSelectProfileAndInstance", "Please select or create a profile and instance first." },
+                { "ServersSoon", "Servers soon.." }
             }
         }, {
             "ru", new Dictionary<string, string> {
@@ -91,7 +93,8 @@ internal static class i18n
                 { "NoProfile", "Нет профиля" },
                 { "ChangeBtnText", "Изменить" },
                 { "NoInstanceSelected", "Сборка не выбрана" },
-                { "SelectInstanceLabel", "ВЫБЕРИТЕ СБОРКУ" },
+                { "SelectInstanceLabel", "Выбранная сборка" },
+                { "ListInstanceLabel", "Мои сборки" },
                 { "CreateInstanceTooltip", "Создать сборку" },
                 { "EditInstanceTooltip", "Редактировать сборку" },
                 { "DeleteInstanceTooltip", "Удалить сборку" },
@@ -118,7 +121,8 @@ internal static class i18n
                 { "NoVersionsPlaceholder", "Нет доступных версий" },
                 { "ErrorLoadingVersionsPlaceholder", "Ошибка загрузки версий" },
                 { "CreateBtn", "Создать" },
-                { "ErrorSelectProfileAndInstance", "Пожалуйста, сначала выберите или создайте профиль и сборку." }
+                { "ErrorSelectProfileAndInstance", "Пожалуйста, сначала выберите или создайте профиль и сборку." },
+                { "ServersSoon", "Сервера скоро будут.." }
             }
         }
     };

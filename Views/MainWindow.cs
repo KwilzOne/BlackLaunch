@@ -20,6 +20,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
+using Avalonia.Media.Transformation;
 using IconPath = Avalonia.Controls.Shapes.Path;
 using CmlLib.Core;
 using CmlLib.Core.ModLoaders.FabricMC;
@@ -39,6 +40,7 @@ public class MainWindow : Window
     private IconPath _playTabIcon = new();
     private IconPath _serversTabIcon = new();
     private Button _playButton = new();
+    private Button _cardEditBtn = new();
     private Button _openFolderButton = new();
     private TextBlock _statusText = new();
     private ProgressBar _progressBar = new();
@@ -67,6 +69,19 @@ public class MainWindow : Window
     private Border _profilesBody = new();
     private readonly StackPanel _profilesList = new();
     private Popup _profilesPopup = new();
+
+    private Border _selectedInstanceCard = new();
+    private IconPath _instanceIcon = new();
+    private TextBlock _selectedEyebrow = new();
+    private TextBlock _selectedTitle = new();
+    private readonly Border _versionTag = new();
+    private TextBlock _versionTagText = new();
+    private readonly Border _loaderTag = new();
+    private TextBlock _loaderTagText = new();
+    private StackPanel _selectedMetaRow = new();
+    private TextBlock _lastLaunchValue = new();
+    private TextBlock _playtimeValue = new();
+    
     private ComboBox _instanceBox = new();
     private TextBlock _instanceDetailsText = new();
     private readonly Grid _overlayGrid;
@@ -526,20 +541,7 @@ public class MainWindow : Window
         };
         _profilesPopup = BuildChangeProfilesPopup(_profileCard);
         profileInner.Children.Add(_profilesPopup);
-
-        var instanceHeader = new Grid {
-            ColumnDefinitions = new ColumnDefinitions("*, Auto"),
-            Margin = new Thickness(2, 0, 0, 6)
-        };
-        instanceHeader.Children.Add(new TextBlock {
-            Text = i18n.Get("SelectInstanceLabel"),
-            FontSize = 11,
-            FontWeight = FontWeight.Bold,
-            LetterSpacing = 1,
-            Foreground = Themes.TextTertiary,
-            VerticalAlignment = VerticalAlignment.Center
-        });
-
+        
         _instanceBox = new ComboBox {
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Padding = new Thickness(12, 0),
@@ -575,7 +577,265 @@ public class MainWindow : Window
                 UpdateActiveInstanceUI();
             }
         };
+        
+        var selectedInstance = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*, Auto"),
+            Margin = new Thickness(2, 0, 0, 6)
+        };
+        _instanceIcon = new IconPath
+        {
+            Stroke = Themes.IconICard,
+            StrokeThickness = 2,
+            StrokeLineCap = PenLineCap.Round,
+            StrokeJoin = PenLineJoin.Round,
+            Stretch = Stretch.None
+        };
+        var iconWrap = SizedIcon(_instanceIcon, 32);
+        iconWrap.HorizontalAlignment = HorizontalAlignment.Center;
+        iconWrap.VerticalAlignment = VerticalAlignment.Center;
+        
+        var iconBox = new Border {
+            Width = 72,
+            Height = 72,
+            CornerRadius = new CornerRadius(14),
+            BorderBrush = Themes.IconICardBorder,
+            BorderThickness = new Thickness(1),
+            VerticalAlignment = VerticalAlignment.Top,
+            Background = new LinearGradientBrush {
+                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+                EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
+                GradientStops = {
+                    new GradientStop(Themes.IconICardBgFirst, 0),
+                    new GradientStop(Themes.IconICardBgSecond, 1),
+                }
+            },
+            Child = iconWrap
+        };
+        _selectedEyebrow = new TextBlock {
+            Text = i18n.Get("SelectInstanceLabel").ToUpper(),
+            FontSize = 9.5,
+            FontWeight = FontWeight.Medium,
+            LetterSpacing = 1.2,
+            Foreground = Themes.ChoosingInstanceText
+        };
+        _selectedTitle = new TextBlock {
+            Text = "",
+            FontSize = 19,
+            FontWeight = FontWeight.Bold,
+            Foreground = Themes.TextPrimary,
+            Margin = new Thickness(0, 3, 0, 0),
+            MaxWidth = 180,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            TextTrimming = TextTrimming.CharacterEllipsis
+        };
+        
+        _versionTag.Background = Themes.TagICardBg;
+        _versionTag.BorderBrush = Themes.TagICardBorder;
+        _versionTag.BorderThickness = new Thickness(1);
+        _versionTag.CornerRadius = new CornerRadius(6);
+        _versionTag.Padding = new Thickness(7, 2);
 
+        _versionTagText = new TextBlock {
+            FontSize = 10,
+            FontWeight = FontWeight.SemiBold,
+            Foreground = Themes.TagICardText,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        _versionTag.Child = _versionTagText;
+        
+        _loaderTag.Background = Themes.TagICardBg;
+        _loaderTag.BorderBrush = Themes.TagICardBorder;
+        _loaderTag.BorderThickness = new Thickness(1);
+        _loaderTag.CornerRadius = new CornerRadius(6);
+        _loaderTag.Padding = new Thickness(7, 2);
+
+        _loaderTagText = new TextBlock {
+            FontSize = 10,
+            FontWeight = FontWeight.SemiBold,
+            Foreground = Themes.TagICardText,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        _loaderTag.Child = _loaderTagText;
+        
+        var tagsRow = new StackPanel {
+            Orientation = Orientation.Horizontal,
+            Spacing = 6,
+            Margin = new Thickness(0, 8, 0, 0),
+            Children = { _versionTag, _loaderTag }
+        };
+
+        _lastLaunchValue = new TextBlock {
+            FontSize = 10,
+            FontWeight = FontWeight.Medium,
+            Foreground = Themes.MetaICardTextValue,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        _playtimeValue = new TextBlock {
+            FontSize = 10,
+            FontWeight = FontWeight.Medium,
+            Foreground = Themes.MetaICardTextValue,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        _selectedMetaRow = new StackPanel {
+            Orientation = Orientation.Horizontal,
+            Spacing = 16,
+            Margin = new Thickness(0, 10, 0, 0),
+            Children = {
+                new StackPanel {
+                    Orientation = Orientation.Horizontal,
+                    Spacing = 4,
+                    Children = {
+                        new TextBlock {
+                            Text = "Последний запуск:",
+                            FontSize = 10,
+                            Foreground = Themes.MetaICardTextName,
+                            VerticalAlignment = VerticalAlignment.Center
+                        },
+                        _lastLaunchValue
+                    }
+                },
+                new StackPanel {
+                    Orientation = Orientation.Horizontal,
+                    Spacing = 4,
+                    Children = {
+                        new TextBlock
+                        {
+                            Text = "В игре:",
+                            FontSize = 10,
+                            Foreground = Themes.MetaICardTextName,
+                            VerticalAlignment = VerticalAlignment.Center
+                        },
+                        _playtimeValue
+                    }
+                }
+            }
+        };
+        
+        var infoPanel = new StackPanel {
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(16, 0, 0, 0),
+            Children = { _selectedEyebrow, _selectedTitle, tagsRow, _selectedMetaRow }
+        };
+        
+        var folderIcon = MakeIcon(Icons.Folder);
+        folderIcon.Stroke = Themes.IconNeutral;
+        _openFolderButton = new Button {
+            Content = SizedIcon(folderIcon, 15),
+            Width = 32,
+            MinHeight = 32,
+            CornerRadius = new CornerRadius(8),
+            Background = Themes.FieldBg,
+            BorderBrush = Themes.Border,
+            BorderThickness = new Thickness(1),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center
+        };
+        _openFolderButton.Click += OpenFolderButton_Click;
+        ToolTip.SetTip(_openFolderButton, i18n.Get("OpenFolderTooltip"));
+        
+        var editBtnIcon = MakeIcon(Icons.Edit);
+        editBtnIcon.Stroke = Themes.IconNeutral;
+        _cardEditBtn = new Button {
+            Content = SizedIcon(editBtnIcon, 15),
+            Width = 32,
+            MinHeight = 32,
+            CornerRadius = new CornerRadius(8),
+            Background = Themes.FieldBg,
+            BorderBrush = Themes.Border,
+            BorderThickness = new Thickness(1),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center
+        };
+        _cardEditBtn.Click += (_, _) => {
+            if (_instanceBox.SelectedItem is Instance selected) ShowInstanceModal(selected);
+        };
+        ToolTip.SetTip(_cardEditBtn, i18n.Get("EditInstanceTooltip"));
+        
+        var actionButtonsPanel = new StackPanel {
+            VerticalAlignment = VerticalAlignment.Top,
+            Spacing = 8,
+            Children = { _cardEditBtn, _openFolderButton }
+        };
+        
+        var topRowGrid = new Grid {
+            ColumnDefinitions = new ColumnDefinitions("Auto, *, Auto")
+        };
+        Grid.SetColumn(iconBox, 0);
+        Grid.SetColumn(infoPanel, 1);
+        Grid.SetColumn(actionButtonsPanel, 2);
+        topRowGrid.Children.Add(iconBox);
+        topRowGrid.Children.Add(infoPanel);
+        topRowGrid.Children.Add(actionButtonsPanel);
+        
+        _playButton = new Button {
+            Background = Themes.Accent,
+            Foreground = Themes.TextPrimary,
+            FontSize = 14,
+            FontWeight = FontWeight.SemiBold,
+            MinHeight = 44,
+            CornerRadius = new CornerRadius(10),
+            Margin = new Thickness(0, 14, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center
+        };
+        var playTriangle = MakeIcon(Icons.Play);
+        playTriangle.Stroke = Themes.TextPrimary;
+        playTriangle.Fill = Themes.TextPrimary;
+        _playButton.Content = new StackPanel {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Children = {
+                SizedIcon(playTriangle, 12),
+                new TextBlock {
+                    Text = i18n.Get("Play"),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    FontWeight = FontWeight.SemiBold
+                }
+            }
+        };
+        _playButton.Click += PlayButton_Click;
+        _playButton.Styles.Add(new Style(x => x.Class(":pointerover").Template().OfType<ContentPresenter>()) {
+            Setters = {
+                new Setter(ContentPresenter.BackgroundProperty, Themes.PlayButtonBgHover)
+            }
+        });
+        _playButton.Styles.Add(new Style(x => x.Class(":pressed").Template().OfType<ContentPresenter>()) {
+            Setters = {
+                new Setter(ContentPresenter.BackgroundProperty, Themes.PlayButtonBgPressed)
+            }
+        });
+        var selectedInstanceLayout = new StackPanel {
+            Children = { topRowGrid, _playButton }
+        };
+        _selectedInstanceCard = new Border {
+            Background = Themes.InstanceCardBg,
+            BorderBrush = Themes.InstanceCardBorder,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(16),
+            Padding = new Thickness(16, 12, 16, 16),
+            Margin = new Thickness(0, 0, 0, 16),
+            Child = selectedInstanceLayout
+        };
+        selectedInstance.Children.Add(_selectedInstanceCard);
+        
+        var instanceHeader = new Grid {
+            ColumnDefinitions = new ColumnDefinitions("*, Auto"),
+            Margin = new Thickness(2, 0, 0, 6)
+        };
+        instanceHeader.Children.Add(new TextBlock {
+            Text = i18n.Get("ListInstanceLabel").ToUpper(),
+            FontSize = 11,
+            FontWeight = FontWeight.Bold,
+            LetterSpacing = 1,
+            Foreground = Themes.TextTertiary,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        
         var plusBtnIcon = MakeIcon(Icons.Plus);
         plusBtnIcon.Stroke = Themes.IconNeutral;
         var addInstanceBtn = new Button {
@@ -591,11 +851,11 @@ public class MainWindow : Window
         };
         addInstanceBtn.Click += (_, _) => ShowInstanceModal();
         ToolTip.SetTip(addInstanceBtn, i18n.Get("CreateInstanceTooltip"));
-        
-        var editBtnIcon = MakeIcon(Icons.Edit);
-        editBtnIcon.Stroke = Themes.IconNeutral;
+
+        var editBtnIconDropdown = MakeIcon(Icons.Edit);
+        editBtnIconDropdown.Stroke = Themes.IconNeutral;
         _editInstanceBtn = new Button {
-            Content = SizedIcon(editBtnIcon, 16),
+            Content = SizedIcon(editBtnIconDropdown, 16),
             Width = 44,
             Height = 44,
             CornerRadius = new CornerRadius(8),
@@ -609,7 +869,7 @@ public class MainWindow : Window
             if (_instanceBox.SelectedItem is Instance selected) ShowInstanceModal(selected);
         };
         ToolTip.SetTip(_editInstanceBtn, i18n.Get("EditInstanceTooltip"));
-
+        
         var deleteBtnIcon = MakeIcon(Icons.Trash);
         deleteBtnIcon.Stroke = Themes.Error;
         _deleteInstanceBtn = new Button {
@@ -654,45 +914,6 @@ public class MainWindow : Window
             Margin = new Thickness(4, 0, 0, 16)
         };
 
-        _playButton = new Button {
-            Content = i18n.Get("Play"),
-            Background = Themes.Accent,
-            Foreground = Themes.TextPrimary,
-            FontSize = 14,
-            FontWeight = FontWeight.SemiBold,
-            MinHeight = 44,
-            CornerRadius = new CornerRadius(10),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Center,
-            VerticalContentAlignment = VerticalAlignment.Center
-        };
-        _playButton.Click += PlayButton_Click;
-        
-        var openFolderBtnIcon = MakeIcon(Icons.Folder);
-        openFolderBtnIcon.Stroke = Themes.IconNeutral;
-        _openFolderButton = new Button {
-            Content = SizedIcon(openFolderBtnIcon, 18),
-            Width = 48,
-            MinHeight = 48,
-            CornerRadius = new CornerRadius(10),
-            Background = Themes.FieldBg,
-            BorderBrush = Themes.Border,
-            BorderThickness = new Thickness(1),
-            HorizontalContentAlignment = HorizontalAlignment.Center,
-            VerticalContentAlignment = VerticalAlignment.Center
-        };
-        _openFolderButton.Click += OpenFolderButton_Click;
-        ToolTip.SetTip(_openFolderButton, i18n.Get("OpenFolderTooltip"));
-
-        var buttonPanel = new Grid {
-            ColumnDefinitions = new ColumnDefinitions("*, 8, Auto"),
-            Margin = new Thickness(0, 8, 0, 0)
-        };
-        Grid.SetColumn(_playButton, 0);
-        Grid.SetColumn(_openFolderButton, 2);
-        buttonPanel.Children.Add(_playButton);
-        buttonPanel.Children.Add(_openFolderButton);
-
         _statusText = new TextBlock {
             Text = "", TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center,
             FontSize = 12, Foreground = Themes.TextSecondary
@@ -711,7 +932,13 @@ public class MainWindow : Window
         var settingsPanel = new StackPanel {
             Spacing = 6,
             Margin = new Thickness(20, 16, 20, 16),
-            Children = { _profileCard, instanceHeader, dropdownRow, _instanceDetailsText, buttonPanel }
+            Children = {
+                _profileCard,
+                selectedInstance,
+                instanceHeader,
+                dropdownRow,
+                _instanceDetailsText
+            }
         };
 
         var statusPanel = new StackPanel {
@@ -726,10 +953,10 @@ public class MainWindow : Window
         dock.Children.Add(settingsPanel);
         return dock;
     }
-
+    
     private static TextBlock BuildServersView() => new()
     {
-        Text = "Servers soon..",
+        Text = i18n.Get("ServersSoon"),
         Foreground = Themes.TextTertiary,
         HorizontalAlignment = HorizontalAlignment.Center,
         VerticalAlignment = VerticalAlignment.Center
@@ -787,11 +1014,34 @@ public class MainWindow : Window
     {
         if (_instanceBox.SelectedItem is Instance inst) {
             _instanceDetailsText.Text = inst.Loader == "Vanilla" ? $"Minecraft {inst.Version}" : $"Minecraft {inst.Version} • {inst.Loader} {inst.LoaderVersion}";
+            
+            _selectedEyebrow.Text = i18n.Get("SelectInstanceLabel").ToUpper();
+            _selectedTitle.Text = inst.Name;
+            _instanceIcon.Data = Geometry.Parse(GetLoaderIcon(inst.Loader));
+            
+            _versionTagText.Text = inst.Version;
+            _loaderTagText.Text = inst.Loader;
+            _versionTag.IsVisible = !string.IsNullOrWhiteSpace(inst.Version);
+            _loaderTag.IsVisible = !string.IsNullOrWhiteSpace(inst.Loader) && inst.Loader != "Vanilla";
+            
+            _lastLaunchValue.Text = "вчера";
+            _playtimeValue.Text = "12 ч";
+            _selectedMetaRow.IsVisible = true;
+            
             _playButton.IsEnabled = true;
             _editInstanceBtn.IsEnabled = true;
             _deleteInstanceBtn.IsEnabled = true;
         } else {
             _instanceDetailsText.Text = i18n.Get("NoInstanceSelected");
+            
+            _selectedEyebrow.Text = i18n.Get("SelectInstanceLabel").ToUpper();
+            _selectedTitle.Text = "";
+            _instanceIcon.Data = Geometry.Parse(GetLoaderIcon(""));
+
+            _versionTag.IsVisible = false;
+            _loaderTag.IsVisible = false;
+            _selectedMetaRow.IsVisible = false;
+            
             _playButton.IsEnabled = false;
             _editInstanceBtn.IsEnabled = false;
             _deleteInstanceBtn.IsEnabled = false;
@@ -858,8 +1108,8 @@ public class MainWindow : Window
         // https://github.com/AvaloniaUI/Avalonia/blob/master/src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml
         const double barSize = 4d;
         var scroll = new ScrollViewer {
-            MinHeight = 200,
-            MaxHeight = 200,
+            MinHeight = 150,
+            MaxHeight = 150,
             Content = _profilesList,
             Margin = new Thickness(0, 0, 0, 8),
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
@@ -930,6 +1180,20 @@ public class MainWindow : Window
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalContentAlignment = VerticalAlignment.Center
         };
+        createBtn.Classes.Add("add-account-btn"); // time to test it !!
+        createBtn.RenderTransformOrigin = RelativePoint.Center;
+        createBtn.Transitions = new Transitions
+        {
+            new DoubleTransition
+            {
+                Property = OpacityProperty,
+                Duration = TimeSpan.FromMilliseconds(150)
+            },
+            new TransformOperationsTransition {
+                Property = RenderTransformProperty,
+                Duration = TimeSpan.FromMilliseconds(100)
+            }
+        };
         createBtn.Click += async (_, _) =>
         {
             _profilesPopup.IsOpen = false;
@@ -945,6 +1209,30 @@ public class MainWindow : Window
         {
             Setters = { new Setter(ContentPresenter.BackgroundProperty, Brushes.Transparent) }
         });
+        panel.Styles.Add(new Style(x => x.OfType<Button>().Class("add-account-btn"))
+        {
+            Setters = {
+                new Setter(OpacityProperty, 0.75),
+                new Setter(RenderTransformProperty, TransformOperations.Parse("scale(1)")),
+                new Setter(BackgroundProperty, Brushes.Transparent)
+            }
+        });
+        panel.Styles.Add(new Style(x => x.OfType<Button>().Class("add-account-btn").Class(":pointerover"))
+        {
+            Setters = {
+                new Setter(OpacityProperty, 1.0),
+                new Setter(BackgroundProperty, Brushes.Transparent)
+            }
+        });
+        panel.Styles.Add(new Style(x => x.OfType<Button>().Class("add-account-btn").Class(":pressed"))
+        {
+            Setters = {
+                new Setter(OpacityProperty, 0.5),
+                new Setter(RenderTransformProperty, TransformOperations.Parse("scale(0.96)")),
+                new Setter(BackgroundProperty, Brushes.Transparent)
+            }
+        });
+        // how I can do it without Styles.Add ??
         
         _profilesBody.Child = panel;
         popup.Opened += (_, _) => _chevronBox.RenderTransform = new RotateTransform(180);

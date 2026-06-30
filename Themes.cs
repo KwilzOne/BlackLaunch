@@ -35,4 +35,20 @@ public class Themes
     public static readonly IBrush SecondaryButtonBg = B("#222228");
     public static readonly IBrush SecondaryButtonBgHover = B("#2C2C34");
     public static readonly IBrush SecondaryButtonBgPressed = B("#1C1C22");
+
+    public static readonly IBrush PlayButtonBgHover = B("#764DFF");
+    public static readonly IBrush PlayButtonBgPressed = B("#522BC7");
+    
+    public static readonly IBrush InstanceCardBg = B("#13111A");
+    public static readonly IBrush InstanceCardBorder = B("#221C2E");
+    public static readonly Color IconICardBgFirst = Color.Parse("#1C152B");
+    public static readonly Color IconICardBgSecond = Color.Parse("#120E1C");
+    public static readonly IBrush IconICardBorder = B("#32254C");
+    public static readonly IBrush IconICard = B("#B599FF");
+    public static readonly IBrush ChoosingInstanceText = B("#7C758F");
+    public static readonly IBrush TagICardBg = B("#1E182C");
+    public static readonly IBrush TagICardBorder = B("#312747");
+    public static readonly IBrush TagICardText = B("#B5ACCA");
+    public static readonly IBrush MetaICardTextName = B("#6E677B");
+    public static readonly IBrush MetaICardTextValue = B("#A59EB2");
 }

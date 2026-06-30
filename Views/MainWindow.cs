@@ -247,7 +247,7 @@ public class MainWindow : Window
             Spacing = 12
         };
         
-        var settingsButton = new Button
+        var settingsButton = new Border
         {
             Width = 24,
             Height = 20,
@@ -270,16 +270,30 @@ public class MainWindow : Window
                 Easing = new Avalonia.Animation.Easings.CubicEaseOut()
             }
         };
-        settingsButton.Content = iconWrapper;
+        settingsButton.Child = iconWrapper;
         settingsButton.PointerEntered += (_, _) =>
         {
             iconSettings.Stroke = Themes.TextPrimary;
-            iconWrapper.RenderTransform = TransformOperations.Parse("rotate(90deg)");
+            iconWrapper.RenderTransform = TransformOperations.Parse("rotate(90deg) scale(1)");
         };
         settingsButton.PointerExited += (_, _) =>
         {
             iconSettings.Stroke = Themes.IconNeutral;
-            iconWrapper.RenderTransform = TransformOperations.Parse("rotate(0deg)");
+            iconWrapper.RenderTransform = TransformOperations.Parse("rotate(0deg) scale(1)");
+        };
+        settingsButton.PointerPressed += (_, e) =>
+        {
+            e.Handled = true;
+            iconWrapper.RenderTransform = TransformOperations.Parse("rotate(115deg) scale(0.88)");
+        };
+        settingsButton.PointerReleased += (_, e) =>
+        {
+            e.Handled = true;
+            iconWrapper.RenderTransform =  TransformOperations.Parse("rotate(90deg) scale(1)");
+            if (e.InitialPressMouseButton == Avalonia.Input.MouseButton.Left)
+            {
+                // TODO: add settings modal
+            }
         };
         
         var minimizeButton = new Button

@@ -31,4 +31,8 @@ public class Themes
     public static readonly IBrush BorderHover = B("#3F3F46");
     public static readonly IBrush Divider = B("#1A1A1D");
     public static readonly IBrush DividerRow = B("#141417");
+
+    public static readonly IBrush SecondaryButtonBg = B("#222228");
+    public static readonly IBrush SecondaryButtonBgHover = B("#2C2C34");
+    public static readonly IBrush SecondaryButtonBgPressed = B("#1C1C22");
 }

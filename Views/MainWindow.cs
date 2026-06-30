@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Avalonia;
+using Avalonia.Animation;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -57,14 +58,19 @@ public class MainWindow : Window
     private readonly string _sharedPath;
     private readonly ConfigService _configService;
     private readonly GameLauncher _gameLauncher;
-    private readonly Config _config = new();
+    private readonly Config _config;
     
     private MinecraftHeadViewer _headViewer = new();
     private TextBlock _profileNameText = new();
+    private Viewbox _chevronBox = new();
+    private Border _profileCard = new();
+    private Border _profilesBody = new();
+    private StackPanel _profilesList = new();
+    private Popup _profilesPopup = new();
     private ComboBox _instanceBox = new();
     private TextBlock _instanceDetailsText = new();
-    private readonly Grid _overlayGrid = new();
-    private readonly Border _overlayCard = new();
+    private readonly Grid _overlayGrid;
+    private readonly Border _overlayCard;
     private Button _editInstanceBtn = new();
     private Button _deleteInstanceBtn = new();
 
@@ -159,6 +165,9 @@ public class MainWindow : Window
             Background = new SolidColorBrush(Color.FromArgb(160, 10, 10, 12)),
             IsVisible = false
         };
+        _overlayGrid.Transitions = new Transitions {
+            new DoubleTransition { Property = OpacityProperty, Duration = TimeSpan.FromMilliseconds(150) }
+        };
         _overlayCard = new Border {
             Background = Themes.WindowBg,
             BorderBrush = Themes.Border,
@@ -198,7 +207,7 @@ public class MainWindow : Window
     private Border BuildTitleBar(Bitmap? logo)
     {
         var bar = new Grid { Background = Brushes.Transparent };
-        bar.PointerPressed += (s, e) => BeginMoveDrag(e);
+        bar.PointerPressed += (_, e) => BeginMoveDrag(e);
 
         var left = new StackPanel {
             Orientation = Orientation.Horizontal,
@@ -235,11 +244,11 @@ public class MainWindow : Window
         var iconSettings = MakeIcon(Icons.Settings);
         iconSettings.Stroke = Themes.IconNeutral;
         settingsButton.Content = SizedIcon(iconSettings, 15);
-        settingsButton.PointerEntered += (s, e) =>
+        settingsButton.PointerEntered += (_, _) =>
         {
             iconSettings.Stroke = Themes.TextPrimary;
         };
-        settingsButton.PointerExited += (s, e) =>
+        settingsButton.PointerExited += (_, _) =>
         {
             iconSettings.Stroke = Themes.IconNeutral;
         };
@@ -257,15 +266,15 @@ public class MainWindow : Window
         var iconMinimize = MakeIcon(Icons.Minimize);
         iconMinimize.Stroke = Themes.IconNeutral;
         minimizeButton.Content = SizedIcon(iconMinimize, 15);
-        minimizeButton.PointerEntered += (s, e) =>
+        minimizeButton.PointerEntered += (_, _) =>
         {
             iconMinimize.Stroke = Themes.TextPrimary;
         };
-        minimizeButton.PointerExited += (s, e) =>
+        minimizeButton.PointerExited += (_, _) =>
         {
             iconMinimize.Stroke = Themes.IconNeutral;
         };
-        minimizeButton.Click += (s, e) =>
+        minimizeButton.Click += (_, _) =>
         {
             WindowState = WindowState.Minimized;
         };
@@ -282,15 +291,15 @@ public class MainWindow : Window
         var iconClose = MakeIcon(Icons.Close);
         iconClose.Stroke = Themes.IconNeutral;
         closeButton.Content = SizedIcon(iconClose, 15);
-        closeButton.PointerEntered += (s, e) =>
+        closeButton.PointerEntered += (_, _) =>
         {
             iconClose.Stroke = Themes.TextPrimary;
         };
-        closeButton.PointerExited += (s, e) =>
+        closeButton.PointerExited += (_, _) =>
         {
             iconClose.Stroke = Themes.IconNeutral;
         };
-        closeButton.Click += (s, e) =>
+        closeButton.Click += (_, _) =>
         {
             Close();
         };
@@ -428,13 +437,24 @@ public class MainWindow : Window
         _serversHoverBg.Background = Brushes.Transparent;
     }
 
+    private static Border MineHeadWrapper(MinecraftHeadViewer viewer, double radius = 8)
+    {
+        return new Border {
+            Child = viewer,
+            CornerRadius = new CornerRadius(radius),
+            ClipToBounds = true
+        };
+    }
+
     private DockPanel BuildPlayView()
     {
         _headViewer = new MinecraftHeadViewer {
-            Width = 44,
-            Height = 44,
-            Margin = new Thickness(0, 0, 12, 0)
+            Width = 36,
+            Height = 36
         };
+        // I make a simple wrapper to use CornerRadius only (standard Control don't support this)
+        var headWrap = MineHeadWrapper(_headViewer);
+        headWrap.Margin = new Thickness(0, 0, 12, 0);
 
         _profileNameText = new TextBlock {
             Text = i18n.Get("NoProfile"),
@@ -446,31 +466,56 @@ public class MainWindow : Window
 
         var profileBtnIcon = MakeIcon(Icons.Settings);
         profileBtnIcon.Stroke = Themes.IconNeutral;
+        var chevronIcon = new IconPath {
+            Data = Geometry.Parse(Icons.DownArrow),
+            Stroke = Themes.IconNeutral,
+            StrokeThickness = 2,
+            StrokeLineCap = PenLineCap.Round,
+            StrokeJoin = PenLineJoin.Round,
+            Stretch = Stretch.None,
+        };
+        _chevronBox = SizedIcon(chevronIcon, 16);
+        _chevronBox.RenderTransformOrigin = RelativePoint.Center;
+        _chevronBox.Margin = new Thickness(0, 0, -4, 0);
         var profileSelectBtn = new Button {
-            Content = SizedIcon(profileBtnIcon, 16),
-            Width = 36,
             Height = 36,
             CornerRadius = new CornerRadius(8),
-            Background = Themes.FieldBg,
+            Background = Themes.SecondaryButtonBg,
             BorderBrush = Themes.Border,
             BorderThickness = new Thickness(1),
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center
         };
-        profileSelectBtn.Click += (_, _) => ShowManageProfilesModal();
+        profileSelectBtn.Content = new StackPanel {
+            Spacing = 6,
+            VerticalAlignment = VerticalAlignment.Center,
+            Orientation = Orientation.Horizontal,
+            Children = {
+                new TextBlock {
+                    Text = "Change",
+                    Foreground = Themes.TextPrimary,
+                    FontSize = 14,
+                    FontWeight = FontWeight.Regular,
+                    VerticalAlignment = VerticalAlignment.Center,
+                },
+                _chevronBox
+            }
+        };
+        profileSelectBtn.Click += (_, _) => ShowManageProfilesPopup();
 
         var profileInner = new Grid {
             ColumnDefinitions = new ColumnDefinitions("Auto, *, Auto"),
             VerticalAlignment = VerticalAlignment.Center
         };
-        Grid.SetColumn(_headViewer, 0);
+        Grid.SetColumn(headWrap, 0);
         Grid.SetColumn(_profileNameText, 1);
         Grid.SetColumn(profileSelectBtn, 2);
-        profileInner.Children.Add(_headViewer);
+        profileInner.Children.Add(headWrap);
         profileInner.Children.Add(_profileNameText);
         profileInner.Children.Add(profileSelectBtn);
+        
 
-        var profileCard = new Border {
+        _profileCard = new Border {
             Background = Themes.FieldBg,
             BorderBrush = Themes.Border,
             BorderThickness = new Thickness(1),
@@ -479,6 +524,8 @@ public class MainWindow : Window
             Child = profileInner,
             Margin = new Thickness(0, 0, 0, 16)
         };
+        _profilesPopup = BuildChangeProfilesPopup(_profileCard);
+        profileInner.Children.Add(_profilesPopup);
 
         var instanceHeader = new Grid {
             ColumnDefinitions = new ColumnDefinitions("*, Auto"),
@@ -515,7 +562,7 @@ public class MainWindow : Window
             }, false)
         };
         StyleField(_instanceBox);
-        _instanceBox.SelectionChanged += (s, e) => {
+        _instanceBox.SelectionChanged += (_, _) => {
             if (_instanceBox.SelectedItem is Instance selected) {
                 _config.SelectedInstanceId = selected.Id;
                 _configService.Save(_config);
@@ -658,7 +705,7 @@ public class MainWindow : Window
         var settingsPanel = new StackPanel {
             Spacing = 6,
             Margin = new Thickness(20, 16, 20, 16),
-            Children = { profileCard, instanceHeader, dropdownRow, _instanceDetailsText, buttonPanel }
+            Children = { _profileCard, instanceHeader, dropdownRow, _instanceDetailsText, buttonPanel }
         };
 
         var statusPanel = new StackPanel {
@@ -745,81 +792,178 @@ public class MainWindow : Window
         }
     }
 
-    private void HideModal()
+    private void ShowModal(Control content)
     {
-        _overlayCard.Child = null;
-        _overlayGrid.IsVisible = false;
-    }
-
-    private void ShowManageProfilesModal()
-    {
-        BuildManageProfilesView();
+        _overlayCard.Child = content;
+        _overlayGrid.Opacity = 0;
         _overlayGrid.IsVisible = true;
+        _overlayGrid.Opacity = 1;
+    }
+    
+    private async void HideModal()
+    {
+        _overlayGrid.Opacity = 0;
+        await Task.Delay(150);  
+        _overlayGrid.IsVisible = false;
+        _overlayCard.Child = null;
+    }
+    
+    private void ShowManageProfilesPopup()
+    {
+        _profilesBody.Width = _profileCard.Bounds.Width;
+        _profilesPopup.IsOpen = true;
+    }
+    
+    private Popup BuildChangeProfilesPopup(Control anchor)
+    {
+        var popup = new Popup
+        {
+            Name =  "Profiles",
+            PlacementTarget = anchor,
+            Placement = PlacementMode.Bottom,
+            IsLightDismissEnabled = true,
+            VerticalOffset = 6,
+        };
+
+        _profilesBody = new Border
+        {
+            Background = Themes.FieldBg,
+            BorderBrush = Themes.Border,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(4),
+        };
+        
+        var panel = new StackPanel { Spacing = 0 };
+        
+        _profilesList.Spacing = 4;
+        _profilesList.Styles.Add(new Style(x => x.OfType<Button>().Class(":pointerover").Template().OfType<ContentPresenter>())
+        {
+            Setters = { new Setter(ContentPresenter.BackgroundProperty, Themes.SecondaryButtonBgHover) },
+        });
+        _profilesList.Styles.Add(new Style(x => x.OfType<Button>().Class(":pressed").Template().OfType<ContentPresenter>())
+        {
+            Setters = { new Setter(ContentPresenter.BackgroundProperty, Themes.SecondaryButtonBgPressed) },
+        });
+        
+        RebuildProfilesPopup();
+        
+        // the most beautiful docs:
+        // https://github.com/AvaloniaUI/Avalonia/blob/master/src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml
+        const double barSize = 4d;
+        var scroll = new ScrollViewer {
+            MinHeight = 200,
+            MaxHeight = 200,
+            Content = _profilesList,
+            Margin = new Thickness(0, 0, 0, 8),
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+        };
+        scroll.Resources["ScrollBarSize"] = barSize;
+        _profilesBody.Styles.Add(new Style(x => x.OfType<ScrollBar>()
+            .Class(":vertical").Template().OfType<Thumb>())
+        {
+            Setters =
+            {
+                new Setter(MinWidthProperty, barSize),
+                new Setter(WidthProperty, barSize),
+                new Setter(MaxWidthProperty, barSize),
+                new Setter(RenderTransformProperty, null),
+            }
+        });
+        _profilesBody.Styles.Add(new Style(x => x.OfType<ScrollBar>()
+            .PropertyEquals(ScrollBar.IsExpandedProperty, true)
+            .Template().OfType<Thumb>())
+        {
+            Setters =
+            {
+                new Setter(MinWidthProperty, barSize),
+                new Setter(WidthProperty, barSize),
+                new Setter(MaxWidthProperty, barSize),
+                new Setter(RenderTransformProperty, null),
+            }
+        });
+        _profilesBody.Styles.Add(new Style(x => x.OfType<RepeatButton>().Name("PART_LineUpButton"))
+        {
+            Setters = { new Setter(IsVisibleProperty, false) }
+        });
+        _profilesBody.Styles.Add(new Style(x => x.OfType<RepeatButton>().Name("PART_LineDownButton"))
+        {
+            Setters = { new Setter(IsVisibleProperty, false) }
+        });
+        panel.Children.Add(scroll);
+
+        var separator = new Border
+        {
+            Height = 1,
+            Background = Themes.Border,
+        };
+        panel.Children.Add(separator);
+
+        var plusIconCreateBtn = MakeIcon(Icons.Plus);
+        plusIconCreateBtn.Stroke = Themes.Accent;
+        var createBtn = new Button {
+            Content = new StackPanel {
+                Orientation = Orientation.Horizontal,
+                Spacing = 8,
+                VerticalAlignment = VerticalAlignment.Center,
+                Children = {
+                    SizedIcon(plusIconCreateBtn, 16),
+                    new TextBlock {
+                        Text = i18n.Get("CreateProfileBtn"),
+                        Foreground = Themes.Accent,
+                        FontWeight = FontWeight.Regular,
+                        FontSize = 14,
+                        VerticalAlignment = VerticalAlignment.Center
+                    }
+                }
+            },
+            Background = Brushes.Transparent,
+            CornerRadius = new CornerRadius(8),
+            Margin = new Thickness(0, 8, 0, 4),
+            Padding = new Thickness(8, 8),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalContentAlignment = VerticalAlignment.Center
+        };
+        createBtn.Click += async (_, _) =>
+        {
+            _profilesPopup.IsOpen = false;
+            await Task.Delay(150);
+            ShowCreateProfileModal();
+        };
+        panel.Children.Add(createBtn);
+        panel.Styles.Add(new Style(x => x.OfType<Button>().Class(":pointerover").Template().OfType<ContentPresenter>())
+        {
+            Setters = { new Setter(ContentPresenter.BackgroundProperty, Brushes.Transparent) }
+        });
+        panel.Styles.Add(new Style(x => x.OfType<Button>().Class(":pressed").Template().OfType<ContentPresenter>())
+        {
+            Setters = { new Setter(ContentPresenter.BackgroundProperty, Brushes.Transparent) }
+        });
+        
+        _profilesBody.Child = panel;
+        popup.Opened += (_, _) => _chevronBox.RenderTransform = new RotateTransform(180);
+        popup.Closed += (_, _) => _chevronBox.RenderTransform = new RotateTransform(0);
+        popup.Child = _profilesBody;
+        return popup;
     }
 
-    private void BuildManageProfilesView()
+    private void RebuildProfilesPopup()
     {
-        var panel = new StackPanel { Spacing = 16 };
-        var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*, Auto") };
-        header.Children.Add(new TextBlock {
-            Text = i18n.Get("ProfilesTitle"),
-            FontSize = 14,
-            FontWeight = FontWeight.Bold,
-            Foreground = Themes.TextPrimary,
-            VerticalAlignment = VerticalAlignment.Center
-        });
-        
-        var closeBtn = new Button
-        {
-            Width = 24,
-            Height = 20,
-            Background = Brushes.Transparent,
-            CornerRadius = new CornerRadius(3),
-            Padding = new Thickness(0),
-            BorderThickness = new Thickness(0),
-        };
-        var closeBtnIcon = MakeIcon(Icons.Close);
-        closeBtnIcon.Stroke = Themes.IconNeutral;
-        closeBtn.Content = SizedIcon(closeBtnIcon, 14);
-        closeBtn.PointerEntered += (s, e) =>
-        {
-            closeBtnIcon.Stroke = Themes.TextPrimary;
-        };
-        closeBtn.PointerExited += (s, e) =>
-        {
-            closeBtnIcon.Stroke = Themes.IconNeutral;
-        };
-        closeBtn.Click += (s, e) =>
-        {
-            HideModal();
-        };
-        
-        Grid.SetColumn(closeBtn, 1);
-        header.Styles.Add(new Style(x => x.OfType<Button>().Class(":pointerover").Template().OfType<ContentPresenter>())
-        {
-            Setters = { new Setter(ContentPresenter.BackgroundProperty, Brushes.Transparent) },
-        });
-        header.Styles.Add(new Style(x => x.OfType<Button>().Class(":pressed").Template().OfType<ContentPresenter>())
-        {
-            Setters = { new Setter(ContentPresenter.BackgroundProperty, Brushes.Transparent) },
-        });
-        header.Children.Add(closeBtn);
-        panel.Children.Add(header);
-
-        var listPanel = new StackPanel { Spacing = 8 };
+        _profilesList.Children.Clear();
         foreach (var profile in _config.Profiles) {
             bool isActive = profile.Id == _config.SelectedProfileId;
             var itemHead = new MinecraftHeadViewer {
-                Width = 32,
-                Height = 32,
+                Width = 30,
+                Height = 30,
                 Skin = LoadProfileSkin(profile.SkinPath),
                 VerticalAlignment = VerticalAlignment.Center
             };
+            var itemHeadWrap = MineHeadWrapper(itemHead);
             var itemText = new TextBlock {
                 Text = profile.Nickname,
                 FontSize = 13,
                 FontWeight = isActive ? FontWeight.SemiBold : FontWeight.Normal,
-                Foreground = isActive ? Themes.Accent : Themes.TextPrimary,
+                Foreground = isActive ? Themes.TextPrimary : Themes.TextTertiary,
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(10, 0, 0, 0)
             };
@@ -831,23 +975,6 @@ public class MainWindow : Window
             };
 
             if (!isActive) {
-                var selectBtn = new Button {
-                    Content = i18n.Get("SelectProfileBtn"),
-                    FontSize = 11,
-                    Padding = new Thickness(8, 4),
-                    Background = Themes.FieldBg,
-                    BorderBrush = Themes.Border,
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(6)
-                };
-                selectBtn.Click += (_, _) => {
-                    _config.SelectedProfileId = profile.Id;
-                    _configService.Save(_config);
-                    UpdateActiveProfileUI();
-                    BuildManageProfilesView();
-                };
-                actions.Children.Add(selectBtn);
-                
                 var deleteBtnIcon = MakeIcon(Icons.Trash);
                 deleteBtnIcon.Stroke = Themes.Error;
                 var deleteBtn = new Button {
@@ -857,61 +984,52 @@ public class MainWindow : Window
                     BorderThickness = new Thickness(0),
                     CornerRadius = new CornerRadius(6)
                 };
-                deleteBtn.Click += (_, _) => {
+                deleteBtn.Click += (_, e) => {
+                    e.Handled = true;
                     if (!string.IsNullOrEmpty(profile.SkinPath) && File.Exists(profile.SkinPath)) try { File.Delete(profile.SkinPath); } catch {}
                     _config.Profiles.Remove(profile);
                     _configService.Save(_config);
-                    BuildManageProfilesView();
+                    RebuildProfilesPopup();
                 };
                 actions.Children.Add(deleteBtn);
             } else {
-                actions.Children.Add(new TextBlock {
-                    Text = i18n.Get("ActiveProfileTag"),
-                    FontSize = 11,
-                    Foreground = Themes.TextTertiary,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(0, 0, 8, 0)
-                });
+                var checkIconWrap = new Border
+                {
+                    Padding = new Thickness(8, 4)
+                };
+                var checkIcon = MakeIcon(Icons.Check);
+                checkIcon.Stroke = Themes.Accent;
+                checkIconWrap.Child = SizedIcon(checkIcon, 16);
+                actions.Children.Add(checkIconWrap);
             }
-
+            
             var itemGrid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto, *, Auto") };
-            Grid.SetColumn(itemHead, 0);
+            Grid.SetColumn(itemHeadWrap, 0);
             Grid.SetColumn(itemText, 1);
             Grid.SetColumn(actions, 2);
-            itemGrid.Children.Add(itemHead);
+            itemGrid.Children.Add(itemHeadWrap);
             itemGrid.Children.Add(itemText);
             itemGrid.Children.Add(actions);
-            var itemBorder = new Border {
+            var itemButton = new Button {
                 Padding = new Thickness(8),
-                Background = Themes.FieldBg,
+                Background = isActive ? Themes.SecondaryButtonBg : Brushes.Transparent,
                 CornerRadius = new CornerRadius(8),
-                Child = itemGrid
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment =  HorizontalAlignment.Stretch,
+                Content = itemGrid
             };
-            listPanel.Children.Add(itemBorder);
+            itemButton.Click += (_, _) =>
+            {
+                _config.SelectedProfileId = profile.Id;
+                _configService.Save(_config);
+                UpdateActiveProfileUI();
+                RebuildProfilesPopup();
+                _profilesPopup.IsOpen = false;
+            };
+            _profilesList.Children.Add(itemButton);
         }
-
-        var scroll = new ScrollViewer {
-            MaxHeight = 200,
-            Content = listPanel
-        };
-        panel.Children.Add(scroll);
-
-        var createBtn = new Button {
-            Content = i18n.Get("CreateProfileBtn"),
-            Background = Themes.Accent,
-            Foreground = Themes.TextPrimary,
-            FontWeight = FontWeight.SemiBold,
-            Height = 36,
-            CornerRadius = new CornerRadius(8),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Center,
-            VerticalContentAlignment = VerticalAlignment.Center
-        };
-        createBtn.Click += (_, _) => ShowCreateProfileModal();
-        panel.Children.Add(createBtn);
-        _overlayCard.Child = panel;
     }
-
+    
     private void ShowCreateProfileModal()
     {
         var panel = new StackPanel { Spacing = 16 };
@@ -990,7 +1108,7 @@ public class MainWindow : Window
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center
         };
-        cancelBtn.Click += (_, _) => BuildManageProfilesView();
+        cancelBtn.Click += (_, _) => HideModal();
         Grid.SetColumn(cancelBtn, 0);
 
         var saveBtn = new Button {
@@ -1035,7 +1153,8 @@ public class MainWindow : Window
             _configService.Save(_config);
             
             UpdateActiveProfileUI();
-            BuildManageProfilesView();
+            RebuildProfilesPopup();
+            HideModal();
         };
         Grid.SetColumn(saveBtn, 2);
 
@@ -1043,7 +1162,7 @@ public class MainWindow : Window
         buttons.Children.Add(saveBtn);
         panel.Children.Add(buttons);
 
-        _overlayCard.Child = panel;
+        ShowModal(panel);
     }
 
     private async Task<List<string>> FetchLoaderVersionsAsync(string mcVersion, string loader)
@@ -1293,8 +1412,7 @@ public class MainWindow : Window
         buttons.Children.Add(saveBtn);
         panel.Children.Add(buttons);
 
-        _overlayCard.Child = panel;
-        _overlayGrid.IsVisible = true;
+        ShowModal(panel);
     }
 
     private void WireGameLauncherEvents()
@@ -1304,6 +1422,8 @@ public class MainWindow : Window
 
         _gameLauncher.ProgressChanged += p =>
             Dispatcher.UIThread.Post(() => {
+                if (p.Percentage > 0 && _progressBar.IsIndeterminate)
+                    _progressBar.IsIndeterminate = false;
                 _progressBar.Value = p.Percentage;
                 _progressDetailText.Text = $"{p.Percentage}% | {p.Speed} | {i18n.Get("StatusTimeLeft", p.Eta)}";
                 var hwnd = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
@@ -1408,7 +1528,8 @@ public class MainWindow : Window
         }
 
         _playButton.IsEnabled = false;
-        _progressBar.Value = 0;
+        // _progressBar.Value = 0;
+        _progressBar.IsIndeterminate = true;
         _progressBar.IsVisible = true;
         _progressDetailText.IsVisible = true;
         _progressDetailText.Text = "";
@@ -1432,7 +1553,8 @@ public class MainWindow : Window
         Dispatcher.UIThread.Post(() => {
             _progressBar.IsVisible = false;
             _progressDetailText.IsVisible = false;
-            _progressBar.Value = 0;
+            // _progressBar.Value = 0;
+            _progressBar.IsIndeterminate = false;
             var hwnd = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
             if (hwnd != IntPtr.Zero) TaskbarProgress.SetState(hwnd, TaskbarProgress.TaskbarStates.NoProgress);
         });

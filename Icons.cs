@@ -5,6 +5,12 @@ internal static class Icons
     public const string Minimize = "M5 12h14";
 
     public const string Close = "M18 6 6 18M6 6L18 18";
+
+    public const string DownArrow = "m6 9 6 6 6-6";
+    
+    public const string UpArrow = "m18 15-6-6-6 6";
+
+    public const string Check = "M20 6 9 17l-5-5";
         
     public const string Play = "M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z";
 

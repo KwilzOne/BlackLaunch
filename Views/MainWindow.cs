@@ -65,7 +65,7 @@ public class MainWindow : Window
     private Viewbox _chevronBox = new();
     private Border _profileCard = new();
     private Border _profilesBody = new();
-    private StackPanel _profilesList = new();
+    private readonly StackPanel _profilesList = new();
     private Popup _profilesPopup = new();
     private ComboBox _instanceBox = new();
     private TextBlock _instanceDetailsText = new();
@@ -76,7 +76,7 @@ public class MainWindow : Window
 
     private readonly HttpClient _httpClient = new();
 
-    enum TabName
+    private enum TabName
     {
         Play,
         Servers
@@ -492,7 +492,7 @@ public class MainWindow : Window
             Orientation = Orientation.Horizontal,
             Children = {
                 new TextBlock {
-                    Text = "Change",
+                    Text = i18n.Get("ChangeBtnText"),
                     Foreground = Themes.TextPrimary,
                     FontSize = 14,
                     FontWeight = FontWeight.Regular,
@@ -557,7 +557,13 @@ public class MainWindow : Window
                         StrokeJoin = PenLineJoin.Round,
                         Stretch = Stretch.None
                     }, 18),
-                    new TextBlock { Text = inst.Name, VerticalAlignment = VerticalAlignment.Center, Foreground = Themes.TextPrimary, FontSize = 14 }
+                    new TextBlock
+                    {
+                        Text = inst.Name,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Foreground = Themes.TextPrimary,
+                        FontSize = 14
+                    }
                 }
             }, false)
         };
@@ -800,7 +806,7 @@ public class MainWindow : Window
         _overlayGrid.Opacity = 1;
     }
     
-    private async void HideModal()
+    private async Task HideModal()
     {
         _overlayGrid.Opacity = 0;
         await Task.Delay(150);  
@@ -1080,7 +1086,7 @@ public class MainWindow : Window
             var topLevel = TopLevel.GetTopLevel(this);
             if (topLevel != null) {
                 var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {
-                    Title = "Select Skin",
+                    Title = i18n.Get("SelectSkinDialogTitle"),
                     AllowMultiple = false,
                     FileTypeFilter = [FilePickerFileTypes.ImagePng]
                 });
@@ -1347,7 +1353,11 @@ public class MainWindow : Window
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center
         };
-        cancelBtn.Click += (_, _) => { cts?.Cancel(); HideModal(); };
+        cancelBtn.Click += (_, _) =>
+        {
+            cts?.Cancel();
+            HideModal();
+        };
         Grid.SetColumn(cancelBtn, 0);
 
         var saveBtn = new Button {

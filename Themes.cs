@@ -51,4 +51,7 @@ public class Themes
     public static readonly IBrush TagICardText = B("#B5ACCA");
     public static readonly IBrush MetaICardTextName = B("#6E677B");
     public static readonly IBrush MetaICardTextValue = B("#A59EB2");
+
+    private static readonly IBrush ActiveBadgeBg = B("#28A864");
+    private static readonly IBrush ActiveCardBg  = B("#1C8264");
 }

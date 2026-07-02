@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace BlackLaunch.Models;
@@ -8,6 +9,8 @@ public class Instance {
     public string Version { get; set; } = "";
     public string Loader { get; set; } = "Vanilla";
     public string LoaderVersion { get; set; } = "";
+    public DateTime? LastLaunch { get; set; } = null;
+    public double PlaytimeHours { get; set; } = 0;
 }
 
 public class Profile {
